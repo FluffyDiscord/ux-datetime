@@ -16,10 +16,13 @@
     --_input-padding-y: var(--ux-datetime-input-padding-y, 0.5625rem);
     --_input-padding-x: var(--ux-datetime-input-padding-x, 0.75rem);
     --_input-min-width: var(--ux-datetime-input-min-width, 7rem);
+    --_field-min-height: var(--ux-datetime-field-min-height, auto);
+    --_field-shadow: var(--ux-datetime-field-shadow, none);
     --_accent: var(--ux-datetime-accent, #2563eb);
     --_accent-contrast: var(--ux-datetime-accent-contrast, #ffffff);
     --_accent-soft: var(--ux-datetime-accent-soft, color-mix(in srgb, var(--_accent) 15%, transparent));
     --_focus-ring: var(--ux-datetime-focus-ring, 0 0 0 0.25rem color-mix(in srgb, var(--_accent) 25%, transparent));
+    --_focus-border-color: var(--ux-datetime-focus-border-color, var(--_accent));
     --_hover-background: var(--ux-datetime-hover-background, #f3f4f6);
     --_invalid-color: var(--ux-datetime-invalid-color, #dc2626);
     --_disabled-background: var(--ux-datetime-disabled-background, #f3f4f6);
@@ -50,15 +53,17 @@
     display: flex;
     align-items: center;
     gap: var(--_gap);
+    min-height: var(--_field-min-height);
     padding: var(--_input-padding-y) var(--_input-padding-x);
     border: var(--_border-width) solid var(--_border-color);
     border-radius: var(--_radius);
     background: var(--_background);
+    box-shadow: var(--_field-shadow);
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
 .ux-datetime__field:focus-within {
-    border-color: var(--_accent);
+    border-color: var(--_focus-border-color);
     box-shadow: var(--_focus-ring);
 }
 

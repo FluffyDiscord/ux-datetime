@@ -7,10 +7,12 @@
     --ux-datetime-border-color: var(--tblr-border-color, var(--bs-border-color));
     --ux-datetime-border-width: var(--tblr-border-width, var(--bs-border-width));
     --ux-datetime-radius: var(--tblr-border-radius, var(--bs-border-radius));
+    --ux-datetime-input-padding-x: 1rem;
+    --ux-datetime-field-shadow: var(--tblr-shadow-input, none);
     --ux-datetime-accent: var(--tblr-primary, var(--bs-primary));
     --ux-datetime-accent-contrast: var(--tblr-primary-fg, #ffffff);
     --ux-datetime-accent-soft: var(--tblr-primary-lt, var(--bs-primary-bg-subtle));
-    --ux-datetime-focus-ring: 0 0 0 0.25rem rgb(var(--tblr-primary-rgb, var(--bs-primary-rgb)) / 0.25);
+    --ux-datetime-focus-ring: 0 0 0 0.25rem rgba(var(--tblr-primary-rgb, var(--bs-primary-rgb)), 0.25);
     --ux-datetime-hover-background: var(--tblr-bg-surface-secondary, var(--bs-tertiary-bg));
     --ux-datetime-invalid-color: var(--tblr-danger, var(--bs-danger));
     --ux-datetime-disabled-background: var(--tblr-bg-surface-secondary, var(--bs-secondary-bg));

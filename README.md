@@ -265,10 +265,13 @@ The markup uses only `ux-datetime__*` classes. Restyle a part through them when 
 | `--ux-datetime-input-padding-y` | `0.5625rem` | Field |
 | `--ux-datetime-input-padding-x` | `0.75rem` | Field |
 | `--ux-datetime-input-min-width` | `7rem` | Each text input |
+| `--ux-datetime-field-min-height` | `auto` | Field, to match taller inputs |
+| `--ux-datetime-field-shadow` | `none` | Field shadow |
 | `--ux-datetime-accent` | `#2563eb` | Focus border, selected days, today ring |
 | `--ux-datetime-accent-contrast` | `#ffffff` | Text on selected days |
 | `--ux-datetime-accent-soft` | accent at 15 % | Days inside a range, active preset |
 | `--ux-datetime-focus-ring` | `0 0 0 0.25rem` accent at 25 % | Field focus shadow |
+| `--ux-datetime-focus-border-color` | accent | Field border while focused |
 | `--ux-datetime-hover-background` | `#f3f4f6` | Hovered day, preset, button |
 | `--ux-datetime-invalid-color` | `#dc2626` | Border of an invalid field |
 | `--ux-datetime-disabled-background` | `#f3f4f6` | Disabled field |
