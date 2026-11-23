@@ -49,6 +49,21 @@
     line-height: var(--_line-height);
 }
 
+:has(> .ux-datetime + .ux-datetime) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ux-datetime-gap, 0.5rem);
+}
+
+:has(> .ux-datetime + .ux-datetime) > .ux-datetime {
+    flex: 2 1 12rem;
+    min-width: 0;
+}
+
+:has(> .ux-datetime + .ux-datetime) > .ux-datetime + .ux-datetime {
+    flex: 1 1 8rem;
+}
+
 .ux-datetime__field {
     display: flex;
     align-items: center;

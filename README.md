@@ -178,7 +178,7 @@ ux_datetime:
     replace_native_widgets: true
 ```
 
-Every `DateType`, `DateTimeType` and `TimeType` with `widget: single_text` (and `html5` left on) now renders the picker. A `DateTimeType` split into `date_widget` / `time_widget` gets a date picker and a time field. Turn one field back with `'ux_datetime' => false`.
+Every `DateType`, `DateTimeType` and `TimeType` with `widget: single_text` (and `html5` left on) now renders the picker. A `DateTimeType` split into `date_widget` / `time_widget` gets a date picker and a time field side by side. Turn one field back with `'ux_datetime' => false`.
 
 ## Sylius
 
