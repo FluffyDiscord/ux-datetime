@@ -2,7 +2,7 @@
     --ux-datetime-font-size: var(--tblr-body-font-size, var(--bs-body-font-size));
     --ux-datetime-font-weight-bold: var(--tblr-font-weight-bold, 600);
     --ux-datetime-color: var(--tblr-body-color, var(--bs-body-color));
-    --ux-datetime-muted-color: var(--tblr-secondary, var(--bs-secondary-color));
+    --ux-datetime-muted-color: var(--tblr-secondary-color, var(--bs-secondary-color));
     --ux-datetime-background: var(--tblr-bg-forms, var(--bs-body-bg));
     --ux-datetime-border-color: var(--tblr-border-color, var(--bs-border-color));
     --ux-datetime-border-width: var(--tblr-border-width, var(--bs-border-width));
@@ -13,7 +13,7 @@
     --ux-datetime-accent-contrast: var(--tblr-primary-fg, #ffffff);
     --ux-datetime-accent-soft: var(--tblr-primary-lt, var(--bs-primary-bg-subtle));
     --ux-datetime-focus-ring: 0 0 0 0.25rem rgba(var(--tblr-primary-rgb, var(--bs-primary-rgb)), 0.25);
-    --ux-datetime-hover-background: var(--tblr-bg-surface-secondary, var(--bs-tertiary-bg));
+    --ux-datetime-hover-background: color-mix(in srgb, var(--tblr-body-color, var(--bs-body-color)) 8%, transparent);
     --ux-datetime-invalid-color: var(--tblr-danger, var(--bs-danger));
     --ux-datetime-disabled-background: var(--tblr-bg-surface-secondary, var(--bs-secondary-bg));
     --ux-datetime-popover-background: var(--tblr-bg-surface, var(--bs-body-bg));
