@@ -78,6 +78,7 @@
     background: var(--_background);
     box-shadow: var(--_field-shadow);
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    cursor: text;
 }
 
 .ux-datetime__field:focus-within {

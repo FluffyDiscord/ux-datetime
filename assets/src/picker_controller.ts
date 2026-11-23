@@ -126,6 +126,23 @@ export default class PickerController extends FieldController {
         this.#focusDayButton();
     }
 
+    focusFieldAt(event: MouseEvent): void {
+        const clickedField = this.fieldTargets.includes(event.target as HTMLInputElement);
+        if (clickedField) {
+            return;
+        }
+
+        const field = this.#getFieldForClick(event.clientX);
+        if (field.disabled) {
+            return;
+        }
+
+        event.preventDefault();
+        field.focus();
+        field.setSelectionRange(field.value.length, field.value.length);
+        this.open();
+    }
+
     pickDay(event: Event): void {
         const button = event.currentTarget as HTMLButtonElement;
         const day = this.#fromIso(button.dataset.date ?? '');
@@ -302,6 +319,22 @@ export default class PickerController extends FieldController {
 
         this.#suppressNextOpen = true;
         field.focus();
+    }
+
+    #getFieldForClick(clientX: number): HTMLInputElement {
+        const emptyField = this.fieldTargets.find((field) => field.value === '');
+        if (emptyField) {
+            return emptyField;
+        }
+
+        const distances = this.fieldTargets.map((field) => {
+            const bounds = field.getBoundingClientRect();
+
+            return Math.abs(clientX - (bounds.left + bounds.width / 2));
+        });
+        const nearestIndex = distances.indexOf(Math.min(...distances));
+
+        return this.fieldTargets[nearestIndex];
     }
 
     #setExpanded(isExpanded: boolean): void {

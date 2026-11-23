@@ -24,6 +24,7 @@ export default class PickerController extends FieldController {
     showPreviousMonth(): void;
     showNextMonth(): void;
     focusCalendar(): void;
+    focusFieldAt(event: MouseEvent): void;
     pickDay(event: Event): void;
     navigateDays(event: KeyboardEvent): void;
     applyPreset(event: Event): void;
