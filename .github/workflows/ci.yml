@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  phpunit:
+    name: PHPUnit (PHP ${{ matrix.php-version }}, ${{ matrix.dependency-versions }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2', '8.3', '8.4', '8.5']
+        dependency-versions: ['lowest', 'highest']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+
+      - uses: ramsey/composer-install@v3
+        with:
+          dependency-versions: ${{ matrix.dependency-versions }}
+
+      - run: vendor/bin/phpunit
+
+  mago:
+    name: mago ${{ matrix.command }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        command: ['fmt --check', 'lint', 'analyze']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+
+      - uses: ramsey/composer-install@v3
+
+      - run: vendor/bin/mago ${{ matrix.command }}
+
+  assets:
+    name: vitest and dist build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: assets
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install
+
+      - run: bun run test
+
+      - name: Committed dist matches the sources
+        run: |
+          bun run build
+          git diff --exit-code -- dist
