@@ -297,3 +297,21 @@
     justify-content: flex-end;
     margin-top: var(--_gap);
 }
+
+@media (max-width: 40rem) {
+    .ux-datetime__popover {
+        flex-direction: column;
+        max-width: calc(100vw - 1rem);
+    }
+
+    .ux-datetime__presets {
+        flex-direction: row;
+        flex-wrap: wrap;
+        border-inline-end: 0;
+        border-bottom: var(--_border-width) solid var(--_popover-border-color);
+    }
+
+    .ux-datetime__months {
+        flex-direction: column;
+    }
+}
