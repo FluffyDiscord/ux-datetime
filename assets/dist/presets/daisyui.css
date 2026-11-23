@@ -1,0 +1,17 @@
+.ux-datetime {
+    --ux-datetime-color: var(--color-base-content);
+    --ux-datetime-muted-color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
+    --ux-datetime-background: var(--color-base-100);
+    --ux-datetime-border-color: color-mix(in oklab, var(--color-base-content) 20%, transparent);
+    --ux-datetime-border-width: var(--border, 1px);
+    --ux-datetime-radius: var(--radius-field);
+    --ux-datetime-accent: var(--color-primary);
+    --ux-datetime-accent-contrast: var(--color-primary-content);
+    --ux-datetime-hover-background: var(--color-base-200);
+    --ux-datetime-invalid-color: var(--color-error);
+    --ux-datetime-disabled-background: var(--color-base-200);
+    --ux-datetime-popover-background: var(--color-base-100);
+    --ux-datetime-popover-border-color: var(--color-base-300);
+    --ux-datetime-popover-radius: var(--radius-box);
+    --ux-datetime-day-radius: var(--radius-selector);
+}

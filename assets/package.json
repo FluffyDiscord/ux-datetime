@@ -1,0 +1,58 @@
+{
+    "name": "@fluffydiscord/ux-datetime",
+    "description": "Toggl-style date, date-time, time and date-range picker Stimulus controllers for Symfony UX",
+    "license": "MIT",
+    "version": "1.0.0",
+    "keywords": [
+        "symfony-ux"
+    ],
+    "type": "module",
+    "files": [
+        "dist"
+    ],
+    "main": "dist/picker_controller.js",
+    "types": "dist/picker_controller.d.ts",
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "test": "vitest run"
+    },
+    "symfony": {
+        "controllers": {
+            "picker": {
+                "main": "dist/picker_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true,
+                "autoimport": {
+                    "@fluffydiscord/ux-datetime/dist/styles.css": true,
+                    "@fluffydiscord/ux-datetime/dist/presets/tabler.css": false,
+                    "@fluffydiscord/ux-datetime/dist/presets/daisyui.css": false
+                }
+            },
+            "time": {
+                "main": "dist/time_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            }
+        },
+        "importmap": {
+            "@hotwired/stimulus": "^3.0.0",
+            "luxon": "^3.4.0",
+            "any-date-parser": "^2.0.0"
+        }
+    },
+    "peerDependencies": {
+        "@hotwired/stimulus": "^3.0.0",
+        "any-date-parser": "^2.0.0",
+        "luxon": "^3.4.0"
+    },
+    "devDependencies": {
+        "@hotwired/stimulus": "^3.2.2",
+        "@types/luxon": "^3.4.2",
+        "any-date-parser": "^2.2.4",
+        "luxon": "^3.7.2",
+        "typescript": "^5.9.0",
+        "vitest": "^4.1.0"
+    }
+}
