@@ -12,6 +12,8 @@
     --ux-datetime-accent: var(--tblr-primary, var(--bs-primary));
     --ux-datetime-accent-contrast: var(--tblr-primary-fg, #ffffff);
     --ux-datetime-accent-soft: var(--tblr-primary-lt, var(--bs-primary-bg-subtle));
+    --ux-datetime-preset-active-background: var(--ux-datetime-accent);
+    --ux-datetime-preset-active-color: var(--ux-datetime-accent-contrast);
     --ux-datetime-focus-ring: 0 0 0 0.25rem rgba(var(--tblr-primary-rgb, var(--bs-primary-rgb)), 0.25);
     --ux-datetime-hover-background: color-mix(in srgb, var(--tblr-body-color, var(--bs-body-color)) 8%, transparent);
     --ux-datetime-invalid-color: var(--tblr-danger, var(--bs-danger));

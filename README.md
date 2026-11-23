@@ -386,7 +386,8 @@ The markup uses only `ux-datetime__*` classes. Restyle a part through them when 
 | `--ux-datetime-gap-small` | `0.25rem` | Space between presets |
 | `--ux-datetime-input-padding-y` | `0.5625rem` | Field |
 | `--ux-datetime-input-padding-x` | `0.75rem` | Field |
-| `--ux-datetime-input-min-width` | `7rem` | Each text input |
+| `--ux-datetime-input-min-width` | `7rem` | Single date, date-time and time inputs; range inputs fit their text |
+| `--ux-datetime-text-padding-x` | `0.1875rem` | Inside each text input: room for the caret, space around the range dash |
 | `--ux-datetime-field-min-height` | `auto` | Field, to match taller inputs |
 | `--ux-datetime-field-shadow` | `none` | Field shadow |
 | `--ux-datetime-accent` | `#2563eb` | Focus border, selected days, today ring |
@@ -411,6 +412,8 @@ The markup uses only `ux-datetime__*` classes. Restyle a part through them when 
 | `--ux-datetime-month-gap` | `1.5rem` | Between the two range months |
 | `--ux-datetime-preset-padding-y` | `0.375rem` | Presets, Clear |
 | `--ux-datetime-preset-padding-x` | `0.75rem` | Presets, Clear |
+| `--ux-datetime-preset-active-background` | accent at 15 % | Active preset |
+| `--ux-datetime-preset-active-color` | text colour | Active preset |
 
 ### Theme presets
 

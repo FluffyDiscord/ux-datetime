@@ -16,6 +16,7 @@
     --_input-padding-y: var(--ux-datetime-input-padding-y, 0.5625rem);
     --_input-padding-x: var(--ux-datetime-input-padding-x, 0.75rem);
     --_input-min-width: var(--ux-datetime-input-min-width, 7rem);
+    --_text-padding-x: var(--ux-datetime-text-padding-x, 0.1875rem);
     --_field-min-height: var(--ux-datetime-field-min-height, auto);
     --_field-shadow: var(--ux-datetime-field-shadow, none);
     --_accent: var(--ux-datetime-accent, #2563eb);
@@ -40,6 +41,8 @@
     --_month-gap: var(--ux-datetime-month-gap, 1.5rem);
     --_preset-padding-y: var(--ux-datetime-preset-padding-y, 0.375rem);
     --_preset-padding-x: var(--ux-datetime-preset-padding-x, 0.75rem);
+    --_preset-active-background: var(--ux-datetime-preset-active-background, var(--_accent-soft));
+    --_preset-active-color: var(--ux-datetime-preset-active-color, var(--_color));
 
     position: relative;
     display: block;
@@ -94,6 +97,7 @@
     flex: none;
     width: 1.25em;
     height: 1.25em;
+    margin-inline-end: calc(-1 * var(--_text-padding-x));
     color: var(--_muted-color);
 }
 
@@ -101,7 +105,7 @@
     flex: 1 1 0;
     min-width: var(--_input-min-width);
     margin: 0;
-    padding: 0;
+    padding: 0 var(--_text-padding-x);
     border: 0;
     background: transparent;
     color: inherit;
@@ -115,7 +119,14 @@
     opacity: 1;
 }
 
+.ux-datetime__field:has(> .ux-datetime__separator) > .ux-datetime__input {
+    flex: none;
+    min-width: 0;
+    field-sizing: content;
+}
+
 .ux-datetime__separator {
+    margin-inline: calc(-1 * var(--_gap));
     color: var(--_muted-color);
 }
 
@@ -173,7 +184,8 @@
 }
 
 .ux-datetime__preset[aria-pressed="true"] {
-    background: var(--_accent-soft);
+    background: var(--_preset-active-background);
+    color: var(--_preset-active-color);
     font-weight: var(--_font-weight-bold);
 }
 
@@ -181,10 +193,10 @@
     color: var(--_muted-color);
 }
 
-.ux-datetime__preset:hover,
+.ux-datetime__preset:not([aria-pressed="true"]):hover,
 .ux-datetime__clear:hover,
 .ux-datetime__nav-button:hover:enabled,
-.ux-datetime__day:hover:enabled {
+.ux-datetime__day:not([data-edge]):hover:enabled {
     background: var(--_hover-background);
 }
 
