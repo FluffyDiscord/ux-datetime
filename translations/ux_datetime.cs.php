@@ -14,10 +14,13 @@ return [
     'invalid' => [
         'date' => 'Neplatné datum. Zadejte třeba 5. 11. 2026.',
         'time' => 'Neplatný čas. Zadejte třeba 9:30.',
+        'unavailable' => 'Toto datum nelze vybrat.',
     ],
     'clear' => 'Vymazat',
     'previous_month' => 'Předchozí měsíc',
     'next_month' => 'Další měsíc',
+    'previous_period' => 'Předchozí období',
+    'next_period' => 'Další období',
     'preset' => [
         'today' => 'Dnes',
         'yesterday' => 'Včera',

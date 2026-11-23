@@ -14,10 +14,13 @@ return [
     'invalid' => [
         'date' => 'Invalid date. Try 11/5/2026.',
         'time' => 'Invalid time. Try 9:30.',
+        'unavailable' => "This date can't be picked.",
     ],
     'clear' => 'Clear',
     'previous_month' => 'Previous month',
     'next_month' => 'Next month',
+    'previous_period' => 'Previous period',
+    'next_period' => 'Next period',
     'preset' => [
         'today' => 'Today',
         'yesterday' => 'Yesterday',

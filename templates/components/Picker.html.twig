@@ -1,9 +1,11 @@
-{% props inputs, withTime = false, presets = null, timezone = null, submitOnApply = false, fieldId = null, required = false, disabled = false, invalid = false, min = null, max = null, testid = 'ux-datetime' %}
+{% props inputs, withTime = false, presets = null, timezone = null, submitOnApply = false, fieldId = null, required = false, disabled = false, invalid = false, min = null, max = null, allowedDates = null, periodButtons = false, testid = 'ux-datetime' %}
 
 {%- set controller = 'fluffydiscord--ux-datetime--picker' -%}
 {%- set isRange = inputs|length > 1 -%}
+{%- set hasPeriodButtons = isRange and periodButtons -%}
 {%- set popoverId = (fieldId ?? testid) ~ '-popover' -%}
 {%- set singlePlaceholder = withTime ? 'placeholder.datetime' : 'placeholder.date' -%}
+{%- set allowedDatesAttribute = allowedDates is null ? {} : {('data-' ~ controller ~ '-allowed-dates-value'): allowedDates|json_encode} -%}
 
 <div {{ attributes.defaults({
     class: 'ux-datetime',
@@ -21,13 +23,21 @@
     ('data-' ~ controller ~ '-with-time-value'): withTime ? 'true' : 'false',
     ('data-' ~ controller ~ '-submit-on-apply-value'): submitOnApply ? 'true' : 'false',
     'data-testid': testid,
-}) }}>
+}|merge(allowedDatesAttribute)) }}>
     {%- for input in inputs %}
-        <input type="hidden" name="{{ input.name }}" value="{{ input.value }}"{% if disabled %} disabled{% endif %} data-{{ controller }}-target="input">
+        {{ include('@UxDatetime/hidden_input.html.twig') }}
     {%- endfor %}
 
     <div data-live-ignore>
         <div class="ux-datetime__field" data-action="mousedown->{{ controller }}#focusFieldAt">
+            {%- if hasPeriodButtons %}
+                <button type="button" class="ux-datetime__period-button"
+                        aria-label="{{ 'previous_period'|trans({}, 'ux_datetime') }}" title="{{ 'previous_period'|trans({}, 'ux_datetime') }}"
+                        {%- if disabled %} disabled{% endif %}
+                        data-action="{{ controller }}#showPreviousPeriod"
+                        data-{{ controller }}-target="previousPeriod"
+                        data-testid="{{ testid }}-period-previous"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6l6 6"/></svg></button>
+            {%- endif %}
             <svg class="ux-datetime__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>
             {%- for input in inputs %}
                 {%- if not loop.first %}
@@ -44,10 +54,19 @@
                        aria-controls="{{ popoverId }}"
                        placeholder="{{ (isRange ? (loop.first ? 'from' : 'to') : singlePlaceholder)|trans({}, 'ux_datetime') }}"
                        data-invalid-message="{{ 'invalid.date'|trans({}, 'ux_datetime') }}"
+                       data-unavailable-message="{{ 'invalid.unavailable'|trans({}, 'ux_datetime') }}"
                        data-{{ controller }}-target="field"
                        data-action="focus->{{ controller }}#open click->{{ controller }}#open change->{{ controller }}#commitTyped keydown.enter->{{ controller }}#applyTyped:prevent keydown.down->{{ controller }}#focusCalendar:prevent"
                        data-testid="{{ testid }}-input-{{ loop.index }}">
             {%- endfor %}
+            {%- if hasPeriodButtons %}
+                <button type="button" class="ux-datetime__period-button ux-datetime__period-button--next"
+                        aria-label="{{ 'next_period'|trans({}, 'ux_datetime') }}" title="{{ 'next_period'|trans({}, 'ux_datetime') }}"
+                        {%- if disabled %} disabled{% endif %}
+                        data-action="{{ controller }}#showNextPeriod"
+                        data-{{ controller }}-target="nextPeriod"
+                        data-testid="{{ testid }}-period-next"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6l-6 6"/></svg></button>
+            {%- endif %}
         </div>
 
         <div hidden class="ux-datetime__popover" id="{{ popoverId }}" role="dialog" aria-label="{{ 'dialog'|trans({}, 'ux_datetime') }}" data-{{ controller }}-target="popover" data-testid="{{ testid }}-popover">

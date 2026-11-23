@@ -5,6 +5,7 @@ export default class PickerController extends FieldController {
     static values: {
         withTime: BooleanConstructor;
         submitOnApply: BooleanConstructor;
+        allowedDates: ArrayConstructor;
     };
     readonly popoverTarget: HTMLElement;
     readonly monthsTarget: HTMLElement;
@@ -14,8 +15,13 @@ export default class PickerController extends FieldController {
     readonly monthTemplateTarget: HTMLTemplateElement;
     readonly weekdayTemplateTarget: HTMLTemplateElement;
     readonly dayTemplateTarget: HTMLTemplateElement;
+    readonly previousPeriodTargets: HTMLButtonElement[];
+    readonly nextPeriodTargets: HTMLButtonElement[];
     readonly withTimeValue: boolean;
     readonly submitOnApplyValue: boolean;
+    readonly allowedDatesValue: string[];
+    readonly hasAllowedDatesValue: boolean;
+    allowedDatesValueChanged(): void;
     connect(): void;
     open(): void;
     close(): void;
@@ -24,6 +30,8 @@ export default class PickerController extends FieldController {
     showPreviousMonth(): void;
     showNextMonth(): void;
     focusCalendar(): void;
+    showPreviousPeriod(): void;
+    showNextPeriod(): void;
     focusFieldAt(event: MouseEvent): void;
     pickDay(event: Event): void;
     navigateDays(event: KeyboardEvent): void;

@@ -21,6 +21,9 @@ class DateRangePickerType extends AbstractType
         $sharedOptions['min'] = $options['min'];
         $sharedOptions['max'] = $options['max'];
         $sharedOptions['presets'] = $options['presets'];
+        $sharedOptions['allowed_dates'] = $options['allowed_dates'];
+        $sharedOptions['submit_on_apply'] = $options['submit_on_apply'];
+        $sharedOptions['input_attr'] = $options['input_attr'];
 
         /** @var array<string, mixed> $fromOptions */
         $fromOptions = $options['from_options'];
@@ -47,10 +50,10 @@ class DateRangePickerType extends AbstractType
         /** @var string $toName */
         $toName = $options['to_name'];
 
-        /** @var array{inputs: list<array{name: string, value: mixed}>, presets: list<mixed>|null, timezone: string|null, min: string|null, max: string|null} $fromPicker */
+        /** @var array{inputs: list<array{name: string, value: mixed, attr: array<string, mixed>}>, presets: list<mixed>|null, timezone: string|null, min: string|null, max: string|null, allowed_dates: list<string>|null, submit_on_apply: bool} $fromPicker */
         $fromPicker = $view->children[$fromName]->vars[PickerTypeExtension::VIEW_VARIABLE];
 
-        /** @var array{inputs: list<array{name: string, value: mixed}>, min: string|null, max: string|null} $toPicker */
+        /** @var array{inputs: list<array{name: string, value: mixed, attr: array<string, mixed>}>, min: string|null, max: string|null, submit_on_apply: bool} $toPicker */
         $toPicker = $view->children[$toName]->vars[PickerTypeExtension::VIEW_VARIABLE];
 
         $view->vars['compound'] = false;
@@ -61,6 +64,9 @@ class DateRangePickerType extends AbstractType
             'timezone' => $fromPicker['timezone'],
             'min' => $fromPicker['min'] ?? $toPicker['min'],
             'max' => $toPicker['max'] ?? $fromPicker['max'],
+            'allowed_dates' => $fromPicker['allowed_dates'],
+            'submit_on_apply' => $fromPicker['submit_on_apply'] || $toPicker['submit_on_apply'],
+            'period_buttons' => $options['period_buttons'],
         ];
     }
 
@@ -75,6 +81,10 @@ class DateRangePickerType extends AbstractType
             'presets' => null,
             'min' => null,
             'max' => null,
+            'allowed_dates' => null,
+            'submit_on_apply' => false,
+            'input_attr' => [],
+            'period_buttons' => false,
             'error_bubbling' => false,
         ]);
 
@@ -86,6 +96,10 @@ class DateRangePickerType extends AbstractType
         $resolver->setAllowedTypes('presets', ['null', 'array']);
         $resolver->setAllowedTypes('min', ['null', 'string', \DateTimeInterface::class]);
         $resolver->setAllowedTypes('max', ['null', 'string', \DateTimeInterface::class]);
+        $resolver->setAllowedTypes('allowed_dates', ['null', 'array', \Closure::class]);
+        $resolver->setAllowedTypes('submit_on_apply', 'bool');
+        $resolver->setAllowedTypes('input_attr', 'array');
+        $resolver->setAllowedTypes('period_buttons', 'bool');
     }
 
     public function getBlockPrefix(): string

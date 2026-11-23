@@ -24,8 +24,9 @@ export default abstract class FieldController extends Controller<HTMLElement> {
 
     blockInvalidSubmit(event: SubmitEvent): void {
         const form = event.target as HTMLFormElement;
-        const belongsToForm = form.contains(this.element);
-        if (!belongsToForm) {
+        const sitsInsideForm = form.contains(this.element);
+        const submitsWithForm = this.inputTargets.some((input) => input.form === form);
+        if (!sitsInsideForm && !submitsWithForm) {
             return;
         }
 
@@ -47,9 +48,9 @@ export default abstract class FieldController extends Controller<HTMLElement> {
         return locale.replace('_', '-');
     }
 
-    protected markValidity(field: HTMLInputElement, isValid: boolean): void {
+    protected markValidity(field: HTMLInputElement, isValid: boolean, message = field.dataset.invalidMessage): void {
         field.setAttribute('aria-invalid', String(!isValid));
-        field.setCustomValidity(isValid ? '' : (field.dataset.invalidMessage ?? ''));
+        field.setCustomValidity(isValid ? '' : (message ?? ''));
     }
 
     protected writeInput(input: HTMLInputElement, value: string): void {

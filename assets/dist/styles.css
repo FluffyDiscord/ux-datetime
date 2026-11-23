@@ -43,6 +43,7 @@
     --_preset-padding-x: var(--ux-datetime-preset-padding-x, 0.75rem);
     --_preset-active-background: var(--ux-datetime-preset-active-background, var(--_accent-soft));
     --_preset-active-color: var(--ux-datetime-preset-active-color, var(--_color));
+    --_period-button-size: var(--ux-datetime-period-button-size, var(--_line-height));
 
     position: relative;
     display: block;
@@ -172,6 +173,7 @@
 
 .ux-datetime__preset,
 .ux-datetime__nav-button,
+.ux-datetime__period-button,
 .ux-datetime__day,
 .ux-datetime__clear {
     margin: 0;
@@ -200,9 +202,31 @@
     color: var(--_muted-color);
 }
 
+.ux-datetime__period-button {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--_period-button-size);
+    height: var(--_period-button-size);
+    padding: 0;
+    border-radius: var(--_radius);
+    color: var(--_muted-color);
+}
+
+.ux-datetime__period-button--next {
+    margin-inline-start: auto;
+}
+
+.ux-datetime__period-button svg {
+    width: 1rem;
+    height: 1rem;
+}
+
 .ux-datetime__preset:not([aria-pressed="true"]):hover,
 .ux-datetime__clear:hover,
 .ux-datetime__nav-button:hover:enabled,
+.ux-datetime__period-button:hover:enabled,
 .ux-datetime__day:not([data-edge]):hover:enabled {
     background: var(--_hover-background);
 }
@@ -210,6 +234,7 @@
 .ux-datetime__preset:focus-visible,
 .ux-datetime__clear:focus-visible,
 .ux-datetime__nav-button:focus-visible,
+.ux-datetime__period-button:focus-visible,
 .ux-datetime__day:focus-visible {
     outline: 2px solid var(--_accent);
     outline-offset: 1px;
@@ -247,6 +272,7 @@
 }
 
 .ux-datetime__nav-button:disabled,
+.ux-datetime__period-button:disabled,
 .ux-datetime__day:disabled {
     opacity: var(--_disabled-opacity);
     cursor: not-allowed;

@@ -1,7 +1,10 @@
 {%- block ux_datetime_widget -%}
+    {%- set ux_datetime_form_attr = attr.form is defined ? {form: attr.form} : {} -%}
+    {%- set ux_datetime_inputs = ux_datetime.inputs|map(input => input|merge({attr: ux_datetime_form_attr|merge(input.attr ?? {})})) -%}
+    {%- set ux_datetime_class = attr.class is defined ? {class: attr.class} : {} -%}
     {%- if ux_datetime.mode is same as('time') -%}
         <twig:UxDatetime:Time
-            input="{{ ux_datetime.inputs|first }}"
+            input="{{ ux_datetime_inputs|first }}"
             fieldId="{{ id }}"
             required="{{ required }}"
             disabled="{{ disabled }}"
@@ -9,20 +12,25 @@
             min="{{ ux_datetime.min }}"
             max="{{ ux_datetime.max }}"
             testid="{{ attr['data-testid'] ?? id }}"
+            {{ ...ux_datetime_class }}
         />
     {%- else -%}
         <twig:UxDatetime:Picker
-            inputs="{{ ux_datetime.inputs }}"
+            inputs="{{ ux_datetime_inputs }}"
             withTime="{{ ux_datetime.mode is same as('datetime') }}"
             presets="{{ ux_datetime.presets }}"
             timezone="{{ ux_datetime.timezone }}"
+            submitOnApply="{{ ux_datetime.submit_on_apply ?? false }}"
             fieldId="{{ id }}"
             required="{{ required }}"
             disabled="{{ disabled }}"
             invalid="{{ not valid }}"
             min="{{ ux_datetime.min }}"
             max="{{ ux_datetime.max }}"
+            allowedDates="{{ ux_datetime.allowed_dates ?? null }}"
+            periodButtons="{{ ux_datetime.period_buttons ?? false }}"
             testid="{{ attr['data-testid'] ?? id }}"
+            {{ ...ux_datetime_class }}
         />
     {%- endif -%}
 {%- endblock ux_datetime_widget -%}

@@ -1,0 +1,7 @@
+<input type="hidden" name="{{ input.name }}" value="{{ input.value }}"
+    {%- if disabled %} disabled{% endif %}
+    {%- for attrName, attrValue in input.attr ?? {} %}
+        {%- if attrValue is same as(true) %} {{ attrName }}
+        {%- elseif attrValue is not same as(false) and attrValue is not null %} {{ attrName }}="{{ attrValue }}"
+        {%- endif %}
+    {%- endfor %} data-{{ controller }}-target="input">

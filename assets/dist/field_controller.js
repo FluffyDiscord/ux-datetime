@@ -13,8 +13,9 @@ export default class FieldController extends Controller {
     }
     blockInvalidSubmit(event) {
         const form = event.target;
-        const belongsToForm = form.contains(this.element);
-        if (!belongsToForm) {
+        const sitsInsideForm = form.contains(this.element);
+        const submitsWithForm = this.inputTargets.some((input) => input.form === form);
+        if (!sitsInsideForm && !submitsWithForm) {
             return;
         }
         const invalidField = this.fieldTargets.find((field) => !field.checkValidity());
@@ -29,9 +30,9 @@ export default class FieldController extends Controller {
         const locale = this.localeValue || document.documentElement.lang || FALLBACK_LOCALE;
         return locale.replace('_', '-');
     }
-    markValidity(field, isValid) {
+    markValidity(field, isValid, message = field.dataset.invalidMessage) {
         field.setAttribute('aria-invalid', String(!isValid));
-        field.setCustomValidity(isValid ? '' : (field.dataset.invalidMessage ?? ''));
+        field.setCustomValidity(isValid ? '' : (message ?? ''));
     }
     writeInput(input, value) {
         if (input.value === value) {

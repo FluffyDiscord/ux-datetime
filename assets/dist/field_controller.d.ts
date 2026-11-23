@@ -11,6 +11,6 @@ export default abstract class FieldController extends Controller<HTMLElement> {
     blockInvalidSubmit(event: SubmitEvent): void;
     protected abstract syncFromInputs(): void;
     protected get locale(): string;
-    protected markValidity(field: HTMLInputElement, isValid: boolean): void;
+    protected markValidity(field: HTMLInputElement, isValid: boolean, message?: string | undefined): void;
     protected writeInput(input: HTMLInputElement, value: string): void;
 }

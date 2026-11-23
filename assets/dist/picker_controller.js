@@ -1,4 +1,5 @@
 import { DateTime, Info } from 'luxon';
+import { shiftRange } from './date_range.js';
 import FieldController from './field_controller.js';
 import { formatDate, parseFuzzyDate } from './fuzzy_date_parser.js';
 const ISO_DATE_FORMAT = 'yyyy-MM-dd';
@@ -16,15 +17,34 @@ const KEY_OFFSETS = {
     PageDown: { months: 1 },
 };
 export default class PickerController extends FieldController {
-    static { this.targets = ['popover', 'months', 'preset', 'previousMonth', 'nextMonth', 'monthTemplate', 'weekdayTemplate', 'dayTemplate']; }
+    static { this.targets = [
+        'popover',
+        'months',
+        'preset',
+        'previousMonth',
+        'nextMonth',
+        'previousPeriod',
+        'nextPeriod',
+        'monthTemplate',
+        'weekdayTemplate',
+        'dayTemplate',
+    ]; }
     static { this.values = {
         withTime: Boolean,
         submitOnApply: Boolean,
+        allowedDates: Array,
     }; }
     #draft = [];
     #viewMonth = DateTime.now().startOf('month');
     #focusedDay = null;
     #suppressNextOpen = false;
+    #allowedDays = null;
+    #sortedAllowedDays = [];
+    allowedDatesValueChanged() {
+        this.#sortedAllowedDays = this.hasAllowedDatesValue ? [...this.allowedDatesValue].sort() : [];
+        this.#allowedDays = this.hasAllowedDatesValue ? new Set(this.#sortedAllowedDays) : null;
+        this.#renderPeriodButtons();
+    }
     connect() {
         const isFocusedBeforeConnect = this.element.contains(document.activeElement);
         if (isFocusedBeforeConnect) {
@@ -40,7 +60,7 @@ export default class PickerController extends FieldController {
             return;
         }
         this.#loadDraftFromInputs();
-        const anchor = this.#draft.find((date) => date !== null) ?? this.#today();
+        const anchor = this.#draft.find((date) => date !== null) ?? this.#getDefaultDay();
         this.#viewMonth = anchor.startOf('month');
         this.#focusedDay = anchor.startOf('day');
         this.popoverTarget.hidden = false;
@@ -88,9 +108,16 @@ export default class PickerController extends FieldController {
         this.open();
         this.#focusDayButton();
     }
+    showPreviousPeriod() {
+        this.#shiftPeriod(-1);
+    }
+    showNextPeriod() {
+        this.#shiftPeriod(1);
+    }
     focusFieldAt(event) {
         const clickedField = this.fieldTargets.includes(event.target);
-        if (clickedField) {
+        const clickedButton = event.target.closest('button') !== null;
+        if (clickedField || clickedButton) {
             return;
         }
         const field = this.#getFieldForClick(event.clientX);
@@ -187,14 +214,41 @@ export default class PickerController extends FieldController {
         const max = this.#getLimit(this.maxValue);
         const isBeforeMin = min !== null && date < min;
         const isAfterMax = max !== null && date > max;
-        return !isBeforeMin && !isAfterMax;
+        return !isBeforeMin && !isAfterMax && this.#isListedDay(date);
     }
     #isDayAllowed(day) {
+        return this.#isWithinLimits(day) && this.#isListedDay(day);
+    }
+    #isWithinLimits(day) {
         const min = this.#getLimit(this.minValue);
         const max = this.#getLimit(this.maxValue);
         const endsBeforeMin = min !== null && day.endOf('day') < min;
         const startsAfterMax = max !== null && day.startOf('day') > max;
-        return !endsBeforeMin && !startsAfterMax;
+        if (endsBeforeMin || startsAfterMax) {
+            return false;
+        }
+        if (this.#allowedDays === null) {
+            return true;
+        }
+        const iso = day.toISODate() ?? '';
+        const firstAllowedDay = this.#sortedAllowedDays.at(0) ?? '';
+        const lastAllowedDay = this.#sortedAllowedDays.at(-1) ?? '';
+        return iso >= firstAllowedDay && iso <= lastAllowedDay;
+    }
+    #isListedDay(day) {
+        if (this.#allowedDays === null) {
+            return true;
+        }
+        return this.#allowedDays.has(day.toISODate() ?? '');
+    }
+    #getDefaultDay() {
+        const today = this.#today();
+        if (this.#allowedDays === null) {
+            return today;
+        }
+        const todayIso = today.toISODate() ?? '';
+        const nextAllowedDay = this.#sortedAllowedDays.find((day) => day >= todayIso) ?? this.#sortedAllowedDays.at(-1);
+        return nextAllowedDay === undefined ? today : this.#fromIso(nextAllowedDay);
     }
     #commitField(field) {
         const index = this.fieldTargets.indexOf(field);
@@ -204,7 +258,8 @@ export default class PickerController extends FieldController {
         const date = parsed === null ? null : this.#normalizeDate(parsed);
         const isAllowed = date !== null && this.#isAllowed(date);
         const isValid = isEmpty || isAllowed;
-        this.markValidity(field, isValid);
+        const message = date === null ? field.dataset.invalidMessage : field.dataset.unavailableMessage;
+        this.markValidity(field, isValid, message);
         if (!isValid) {
             return false;
         }
@@ -299,7 +354,14 @@ export default class PickerController extends FieldController {
             return day.startOf('week', LOCALE_WEEKS).plus({ days: 6 });
         }
         const offset = KEY_OFFSETS[key];
-        return offset === undefined ? null : day.plus(offset);
+        if (offset === undefined) {
+            return null;
+        }
+        let target = day.plus(offset);
+        while (this.#isWithinLimits(target) && !this.#isListedDay(target)) {
+            target = target.plus(offset);
+        }
+        return target;
     }
     #showMonthOf(day) {
         const month = day.startOf('month');
@@ -331,6 +393,37 @@ export default class PickerController extends FieldController {
             const date = ordered[index] ?? null;
             field.value = date === null ? '' : formatDate(date, { locale: this.locale, withTime: this.withTimeValue });
         });
+        this.#renderPeriodButtons();
+    }
+    #getAppliedRange() {
+        const [start, end] = this.inputTargets.map((input) => this.#fromIso(input.value));
+        const isComplete = this.#isRange() && start.isValid && end.isValid;
+        return isComplete ? [start, end] : null;
+    }
+    #getShiftedRange(direction) {
+        const range = this.#getAppliedRange();
+        if (range === null) {
+            return null;
+        }
+        const shifted = shiftRange(range, direction);
+        const isAllowed = shifted.every((day) => this.#isDayAllowed(day));
+        return isAllowed ? shifted : null;
+    }
+    #shiftPeriod(direction) {
+        const shifted = this.#getShiftedRange(direction);
+        if (shifted === null) {
+            return;
+        }
+        this.#apply(shifted);
+    }
+    #renderPeriodButtons() {
+        const isFieldDisabled = this.fieldTargets[0].disabled;
+        for (const button of this.previousPeriodTargets) {
+            button.disabled = isFieldDisabled || this.#getShiftedRange(-1) === null;
+        }
+        for (const button of this.nextPeriodTargets) {
+            button.disabled = isFieldDisabled || this.#getShiftedRange(1) === null;
+        }
     }
     #getMonthCount() {
         return this.#isRange() ? 2 : 1;
@@ -356,8 +449,8 @@ export default class PickerController extends FieldController {
     #renderMonthNavigation() {
         const previousMonthLastDay = this.#viewMonth.minus({ days: 1 });
         const nextMonthFirstDay = this.#viewMonth.plus({ months: this.#getMonthCount() });
-        this.previousMonthTarget.disabled = !this.#isDayAllowed(previousMonthLastDay);
-        this.nextMonthTarget.disabled = !this.#isDayAllowed(nextMonthFirstDay);
+        this.previousMonthTarget.disabled = !this.#isWithinLimits(previousMonthLastDay);
+        this.nextMonthTarget.disabled = !this.#isWithinLimits(nextMonthFirstDay);
     }
     #renderPresets() {
         const [start, end] = this.#getOrderedIsoDays();

@@ -9,6 +9,9 @@ Sylius users: see [Sylius](#sylius). After [Setup](#setup) the whole admin uses 
 - [Four form types](#form-types) — submit exactly what Symfony's `DateType`, `DateTimeType` and `TimeType` expect
 - [Presets](#presets) — 22 built-in ranges as a PHP enum, plus your own in one class
 - [Limits](#limits) — `min` / `max` come from the field's `LessThan`, `GreaterThan` and `Range` constraints
+- [Allowed dates](#allowed-dates) — only the days you list can be picked, typed or submitted
+- [Period buttons](#period-buttons) — step a range back or forward by its own length
+- [Hidden input attributes](#hidden-input-attributes) — `data-model`, `form` and any other attribute on the inputs that submit the value
 - [Free-form typing](#typing) — `5.11.`, `dnes`, `tomorrow 14:30`, `930` all work
 - [Global switch](#global-switch) — every `single_text` date, date-time and time field becomes the picker
 - [Sylius admin](#sylius) — every admin date field and grid date filter, the shop untouched
@@ -124,9 +127,20 @@ Each single type is the native type with `widget: single_text`, so every native 
 | `min` | `null` | Earliest allowed value. `DateTimeInterface` or a string in the HTML5 format. Also read from `attr.min`. `null` = [from the constraints](#limits). |
 | `max` | `null` | Latest allowed value. Same formats as `min`. |
 | `presets` | `null` | [Preset](#presets) buttons to show: `Preset` cases and preset names, mixed. `null` = `presets.default_date`, or `presets.default_range` for a range. |
+| `allowed_dates` | `null` | The only days that can be picked: `Y-m-d` strings and `DateTimeInterface` objects, or a closure that returns them. `null` = every day. See [Allowed dates](#allowed-dates). |
+| `submit_on_apply` | `false` | Submits the form once a day, preset or period is picked. |
+| `input_attr` | `[]` | Attributes for the hidden input that submits the value. See [Hidden input attributes](#hidden-input-attributes). |
 | `ux_datetime` | `null` | `true` / `false` forces the picker on or off for this field. `null` = follow [the global switch](#global-switch). |
 
 Days, presets and typed dates outside `min` / `max` are blocked in the browser.
+
+`attr.class` goes on the field's wrapper, so a size class from the form type sizes the whole field:
+
+```php
+$builder->add('deliveredOn', DatePickerType::class, [
+    'attr' => ['class' => 'w-40'],
+]);
+```
 
 ### Date range
 
@@ -138,7 +152,8 @@ Days, presets and typed dates outside `min` / `max` are blocked in the browser.
 | `options` | `[]` | Options for both children, e.g. `['input' => 'datetime_immutable']`. |
 | `from_options` / `to_options` | `[]` | Options for one child. |
 | `presets` | `null` | Same as above. |
-| `min` / `max` | `null` | Applied to both children. |
+| `min` / `max`, `allowed_dates`, `submit_on_apply`, `input_attr` | see above | Applied to both children. |
+| `period_buttons` | `false` | Shows the [previous and next period](#period-buttons) buttons. |
 
 Map it onto two entity fields with `inherit_data`:
 
@@ -255,6 +270,82 @@ That field gets `max` = today in Prague: future days are disabled and the Tomorr
 
 > The browser check is only a convenience. The constraint still validates on the server.
 
+## Allowed dates
+
+List the only days people can pick:
+
+```php
+$builder->add('departureOn', DatePickerType::class, [
+    'allowed_dates' => ['2026-12-04', '2026-12-11', new \DateTimeImmutable('2026-12-18')],
+]);
+```
+
+- Every other day is disabled in the calendar, and the arrow keys skip over it.
+- The calendar opens on the next allowed day, and the month arrows stop at the first and last one.
+- A typed day outside the list turns red and blocks the submit.
+- A preset shows only when its day is in the list. A range preset needs its first and its last day.
+- On a date-time field the list limits the day; any time on that day goes.
+- An empty list allows no day at all.
+
+The server rejects any other day with `This date is not available.`, so a hand-made request can't get past the list.
+
+Pass a closure to look the days up only when the form needs them:
+
+```php
+'allowed_dates' => fn (): array => $this->departures->findDays(),
+```
+
+The closure runs each time the field renders and each time it's submitted.
+
+## Period buttons
+
+Turn on the arrows that move a range by its own length:
+
+```php
+$builder->add('period', DateRangePickerType::class, [
+    'period_buttons' => true,
+    'submit_on_apply' => true,
+]);
+```
+
+| Range | Next period |
+|---|---|
+| 23–29 Nov (a week) | 30 Nov – 6 Dec |
+| 10–19 Nov (10 days) | 20–29 Nov |
+| 1–30 Nov (a month) | 1–31 Dec |
+| 1 Oct – 31 Dec (a quarter) | 1 Jan – 31 Mar |
+
+A range from the 1st to a month's last day moves by whole calendar months. Any other range moves by its number of days.
+
+The buttons are disabled while the range is incomplete, and when the moved range would leave `min` / `max` or the [allowed dates](#allowed-dates).
+
+## Hidden input attributes
+
+The value is submitted by hidden inputs; the text fields only take typing. Put attributes for the value on the hidden inputs with `input_attr`:
+
+```php
+$builder->add('deliveredOn', DatePickerType::class, [
+    'input_attr' => ['data-action' => 'change->shipping#recalculate'],
+]);
+```
+
+A `form` attribute in `attr` goes to the hidden inputs too. A field rendered outside its `<form>` then still submits with it, and still blocks that form's submit while its text is invalid:
+
+```twig
+{{ form_widget(filters.period, {attr: {form: 'filters'}}) }}
+```
+
+In the [Twig component](#twig-component), give each input an `attr` key. `data-model` binds a LiveProp without a form:
+
+```twig
+<twig:UxDatetime:Picker
+    inputs="{{ [{name: 'departureOn', value: departureOn, attr: {'data-model': 'on(change)|departureOn'}}] }}"
+    allowedDates="{{ departureDays }}"
+/>
+```
+
+> The Twig component limits only the browser. Check a value that comes through it on the server yourself.
+
 ## Configuration
 
 `config/packages/ux_datetime.yaml`
@@ -337,6 +428,8 @@ $grid->addFilter(DateFilter::create('receivedAt')->addOption(LocalTimeDateFilter
 
 Nothing to do. The visible fields sit in `data-live-ignore`; the hidden inputs carry the value, send `input` and `change` for the model, and update the visible text when a re-render brings a new value.
 
+To bind a LiveProp to the [Twig component](#twig-component) without a form, see [Hidden input attributes](#hidden-input-attributes).
+
 ## Twig component
 
 The form theme renders `<twig:UxDatetime:Picker>`. Use it directly for a field outside a form type:
@@ -348,7 +441,7 @@ The form theme renders `<twig:UxDatetime:Picker>`. Use it directly for a field o
 />
 ```
 
-Props: `inputs` (one = single date, two = range), `withTime`, `presets`, `timezone`, `submitOnApply`, `fieldId`, `required`, `disabled`, `invalid`, `min`, `max`, `testid`. The time field is `<twig:UxDatetime:Time input="{{ {name: 'at', value: at} }}" stepMinutes="{{ 30 }}"/>`.
+Props: `inputs` (one = single date, two = range; each `{name, value, attr}`, `attr` optional), `withTime`, `presets`, `timezone`, `submitOnApply`, `fieldId`, `required`, `disabled`, `invalid`, `min`, `max`, `allowedDates` (list of `Y-m-d`), `periodButtons`, `testid`. The time field is `<twig:UxDatetime:Time input="{{ {name: 'at', value: at} }}" stepMinutes="{{ 30 }}"/>`, and its `input` takes an `attr` key too.
 
 ## Theming
 
@@ -415,6 +508,7 @@ The markup uses only `ux-datetime__*` classes. Restyle a part through them when 
 | `--ux-datetime-preset-padding-x` | `0.75rem` | Presets, Clear |
 | `--ux-datetime-preset-active-background` | accent at 15 % | Active preset |
 | `--ux-datetime-preset-active-color` | text colour | Active preset |
+| `--ux-datetime-period-button-size` | `--ux-datetime-line-height` | Previous / next period buttons |
 
 ### Theme presets
 
@@ -453,6 +547,8 @@ Days carry their full date as `aria-label`, today has `aria-current="date"`, pic
 ## Translations
 
 Czech and English ship in the `ux_datetime` domain. Override or add a locale in `translations/ux_datetime.<locale>.yaml`. Month and weekday names, the week start and the date format come from the browser's `Intl` for the request locale.
+
+The server's [allowed dates](#allowed-dates) error is `This date is not available.` in the `validators` domain, with Czech included.
 
 Not covered:
 

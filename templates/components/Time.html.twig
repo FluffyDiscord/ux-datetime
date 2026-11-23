@@ -13,7 +13,7 @@
     ('data-' ~ controller ~ '-step-minutes-value'): stepMinutes,
     'data-testid': testid,
 }) }}>
-    <input type="hidden" name="{{ input.name }}" value="{{ input.value }}"{% if disabled %} disabled{% endif %} data-{{ controller }}-target="input">
+    {{ include('@UxDatetime/hidden_input.html.twig') }}
 
     <div data-live-ignore>
         <div class="ux-datetime__field">

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace FluffyDiscord\UxDatetime\Tests;
 
 use FluffyDiscord\UxDatetime\Form\Type\DatePickerType;
+use FluffyDiscord\UxDatetime\Form\Type\DateRangePickerType;
+use FluffyDiscord\UxDatetime\Form\Type\TimePickerType;
 use FluffyDiscord\UxDatetime\Preset\Preset;
 use FluffyDiscord\UxDatetime\Tests\Fixtures\LimitsData;
 use FluffyDiscord\UxDatetime\Tests\Fixtures\TestKernel;
@@ -14,6 +16,7 @@ use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Twig\Environment;
 
 class PickerFormTest extends WebTestCase
 {
@@ -152,6 +155,76 @@ class PickerFormTest extends WebTestCase
         self::assertSame('2030-01-01', $explicit['max']);
     }
 
+    public function testFormOptionsReachTheRenderedPicker(): void
+    {
+        self::bootKernel();
+
+        $form = $this
+            ->getFormFactory()
+            ->createNamedBuilder('filter')
+            ->add('date', DatePickerType::class, [
+                'input' => 'string',
+                'attr' => ['class' => 'w-40'],
+                'input_attr' => ['data-model' => 'on(change)|date'],
+                'submit_on_apply' => true,
+                'allowed_dates' => static fn (): array => ['2026-11-05', new \DateTimeImmutable('2026-11-03')],
+            ])
+            ->add('range', DateRangePickerType::class, [
+                'options' => ['input' => 'string'],
+                'period_buttons' => true,
+                'submit_on_apply' => true,
+            ])
+            ->add('time', TimePickerType::class, [
+                'input' => 'string',
+                'attr' => ['class' => 'w-24'],
+                'input_attr' => ['data-model' => 'time'],
+            ])
+            ->getForm();
+
+        $crawler = new Crawler($this->renderTemplate(
+            "{{ form_widget(form.date) }}{{ form_widget(form.range, {attr: {form: 'filters'}}) }}{{ form_widget(form.time) }}",
+            ['form' => $form->createView()],
+        ));
+
+        $date = $crawler->filter('[data-testid="filter_date"]');
+        self::assertSame('ux-datetime w-40', $date->attr('class'));
+        self::assertSame('on(change)|date', $date->filter('input[type="hidden"]')->attr('data-model'));
+        self::assertSame('true', $date->attr(self::PICKER_VALUE_PREFIX . 'submit-on-apply-value'));
+        self::assertSame('["2026-11-03","2026-11-05"]', $date->attr(self::PICKER_VALUE_PREFIX . 'allowed-dates-value'));
+        self::assertCount(0, $date->filter('[data-testid="filter_date-period-previous"]'));
+
+        $range = $crawler->filter('[data-testid="filter_range"]');
+        self::assertSame(
+            ['filters', 'filters'],
+            $range->filter('input[type="hidden"]')->each(static fn (Crawler $input): ?string => $input->attr('form')),
+        );
+        self::assertSame('true', $range->attr(self::PICKER_VALUE_PREFIX . 'submit-on-apply-value'));
+        self::assertNull($range->attr(self::PICKER_VALUE_PREFIX . 'allowed-dates-value'));
+        self::assertCount(1, $range->filter('[data-testid="filter_range-period-previous"]'));
+        self::assertCount(1, $range->filter('[data-testid="filter_range-period-next"]'));
+
+        $time = $crawler->filter('[data-testid="filter_time"]');
+        self::assertSame('ux-datetime w-24', $time->attr('class'));
+        self::assertSame('time', $time->filter('input[type="hidden"]')->attr('data-model'));
+    }
+
+    public function testAllowedDatesRejectEveryOtherDayOnSubmit(): void
+    {
+        self::bootKernel();
+
+        $options = ['input' => 'string', 'allowed_dates' => ['2026-11-05']];
+        $allowed = $this->getFormFactory()->create(DatePickerType::class, null, $options);
+        $other = $this->getFormFactory()->create(DatePickerType::class, null, $options);
+
+        $allowed->submit('2026-11-05');
+        $other->submit('2026-11-06');
+
+        self::assertTrue($allowed->isValid());
+        self::assertSame('2026-11-05', $allowed->getData());
+        self::assertFalse($other->isValid());
+        self::assertSame("ERROR: Toto datum není k dispozici.\n", (string) $other->getErrors());
+    }
+
     /**
      * @param array<array-key, mixed> $options
      */
@@ -167,6 +240,17 @@ class PickerFormTest extends WebTestCase
     {
         /** @var FormFactoryInterface */
         return self::getContainer()->get('form.factory');
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function renderTemplate(string $template, array $context): string
+    {
+        /** @var Environment $twig */
+        $twig = self::getContainer()->get('twig');
+
+        return $twig->createTemplate($template)->render($context);
     }
 
     /**
