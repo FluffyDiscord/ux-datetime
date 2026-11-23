@@ -125,6 +125,12 @@
     field-sizing: content;
 }
 
+@supports not (field-sizing: content) {
+    .ux-datetime__field:has(> .ux-datetime__separator) > .ux-datetime__input {
+        width: calc(var(--ux-datetime-range-input-width, 11ch) + 2 * var(--_text-padding-x));
+    }
+}
+
 .ux-datetime__separator {
     margin-inline: calc(-1 * var(--_gap));
     color: var(--_muted-color);

@@ -388,6 +388,7 @@ The markup uses only `ux-datetime__*` classes. Restyle a part through them when 
 | `--ux-datetime-input-padding-x` | `0.75rem` | Field |
 | `--ux-datetime-input-min-width` | `7rem` | Single date, date-time and time inputs; range inputs fit their text |
 | `--ux-datetime-text-padding-x` | `0.1875rem` | Inside each text input: room for the caret, space around the range dash |
+| `--ux-datetime-range-input-width` | `11ch` | Each range date's text width in browsers without `field-sizing` (Firefox, older Safari) |
 | `--ux-datetime-field-min-height` | `auto` | Field, to match taller inputs |
 | `--ux-datetime-field-shadow` | `none` | Field shadow |
 | `--ux-datetime-accent` | `#2563eb` | Focus border, selected days, today ring |
