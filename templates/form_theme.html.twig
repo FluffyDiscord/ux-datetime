@@ -1,0 +1,34 @@
+{%- block ux_datetime_widget -%}
+    {%- if ux_datetime.mode is same as('time') -%}
+        <twig:UxDatetime:Time
+            input="{{ ux_datetime.inputs|first }}"
+            fieldId="{{ id }}"
+            required="{{ required }}"
+            disabled="{{ disabled }}"
+            invalid="{{ not valid }}"
+            min="{{ ux_datetime.min }}"
+            max="{{ ux_datetime.max }}"
+            testid="{{ attr['data-testid'] ?? id }}"
+        />
+    {%- else -%}
+        <twig:UxDatetime:Picker
+            inputs="{{ ux_datetime.inputs }}"
+            withTime="{{ ux_datetime.mode is same as('datetime') }}"
+            presets="{{ ux_datetime.presets }}"
+            fieldId="{{ id }}"
+            required="{{ required }}"
+            disabled="{{ disabled }}"
+            invalid="{{ not valid }}"
+            min="{{ ux_datetime.min }}"
+            max="{{ ux_datetime.max }}"
+            testid="{{ attr['data-testid'] ?? id }}"
+        />
+    {%- endif -%}
+{%- endblock ux_datetime_widget -%}
+
+{%- block ux_datetime_range_widget -%}
+    {{- block('ux_datetime_widget') -}}
+    {%- for child in form -%}
+        {%- do child.setRendered() -%}
+    {%- endfor -%}
+{%- endblock ux_datetime_range_widget -%}

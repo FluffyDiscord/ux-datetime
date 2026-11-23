@@ -1,0 +1,12 @@
+<div class="mb-3 field">
+    <label class="form-label" for="{{ form.from.date.vars.id }}">{{ filter.label|trans }}</label>
+    <twig:UxDatetime:Picker
+        inputs="{{ [
+            {name: form.from.date.vars.full_name, value: form.from.date.vars.value},
+            {name: form.to.date.vars.full_name, value: form.to.date.vars.value},
+        ] }}"
+        submitOnApply="{{ true }}"
+        fieldId="{{ form.from.date.vars.id }}"
+        testid="{{ 'grid-filter-' ~ filter.name }}"
+    />
+</div>

@@ -1,0 +1,48 @@
+{
+    "name": "fluffydiscord/ux-datetime",
+    "description": "Toggl-style date, date-time, time and date-range picker for Symfony forms: Stimulus controller, Twig component, optional Sylius admin integration",
+    "type": "symfony-bundle",
+    "keywords": ["symfony-ux", "datepicker", "daterange", "stimulus", "sylius"],
+    "require": {
+        "php": ">=8.2",
+        "symfony/config": "^6.4 || ^7.0 || ^8.0",
+        "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
+        "symfony/form": "^6.4 || ^7.0 || ^8.0",
+        "symfony/http-foundation": "^6.4 || ^7.0 || ^8.0",
+        "symfony/http-kernel": "^6.4 || ^7.0 || ^8.0",
+        "symfony/options-resolver": "^6.4 || ^7.0 || ^8.0",
+        "symfony/stimulus-bundle": "^2.20 || ^3.0",
+        "symfony/translation": "^6.4 || ^7.0 || ^8.0",
+        "symfony/twig-bundle": "^6.4 || ^7.0 || ^8.0",
+        "symfony/ux-twig-component": "^2.20 || ^3.0"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "FluffyDiscord\\UxDatetime\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "FluffyDiscord\\UxDatetime\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "carthage-software/mago": true
+        }
+    },
+    "suggest": {
+        "sylius/sylius": "Turns the picker on for every Sylius admin date field and grid date filter"
+    },
+    "require-dev": {
+        "carthage-software/mago": "^1.0",
+        "phpunit/phpunit": "^11.5 || ^12.0",
+        "sylius/grid-bundle": "^1.13",
+        "symfony/asset-mapper": "^6.4 || ^7.0 || ^8.0",
+        "symfony/browser-kit": "^6.4 || ^7.0 || ^8.0",
+        "symfony/css-selector": "^6.4 || ^7.0 || ^8.0",
+        "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0"
+    }
+}

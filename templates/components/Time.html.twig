@@ -1,0 +1,33 @@
+{% props input, stepMinutes = 15, fieldId = null, required = false, disabled = false, invalid = false, min = null, max = null, testid = 'ux-datetime' %}
+
+{%- set controller = 'fluffydiscord--ux-datetime--time' -%}
+
+<div {{ attributes.defaults({
+    class: 'ux-datetime',
+    'data-controller': controller,
+    'data-action': 'submit@document->' ~ controller ~ '#blockInvalidSubmit',
+    ('data-' ~ controller ~ '-values-value'): [input.value ?? '']|json_encode,
+    ('data-' ~ controller ~ '-locale-value'): app.locale,
+    ('data-' ~ controller ~ '-min-value'): min ?? '',
+    ('data-' ~ controller ~ '-max-value'): max ?? '',
+    ('data-' ~ controller ~ '-step-minutes-value'): stepMinutes,
+    'data-testid': testid,
+}) }}>
+    <input type="hidden" name="{{ input.name }}" value="{{ input.value }}"{% if disabled %} disabled{% endif %} data-{{ controller }}-target="input">
+
+    <div data-live-ignore>
+        <div class="ux-datetime__field">
+            <svg class="ux-datetime__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 7v5l3 3"/></svg>
+            <input type="text" class="ux-datetime__input" autocomplete="off" inputmode="numeric"
+                   {%- if fieldId %} id="{{ fieldId }}"{% endif %}
+                   {%- if required %} required{% endif %}
+                   {%- if disabled %} disabled{% endif %}
+                   aria-invalid="{{ invalid ? 'true' : 'false' }}"
+                   placeholder="{{ 'placeholder.time'|trans({}, 'ux_datetime') }}"
+                   data-invalid-message="{{ 'invalid.time'|trans({}, 'ux_datetime') }}"
+                   data-{{ controller }}-target="field"
+                   data-action="change->{{ controller }}#commitTyped keydown.enter->{{ controller }}#commitTyped:prevent keydown.up->{{ controller }}#stepUp:prevent keydown.down->{{ controller }}#stepDown:prevent"
+                   data-testid="{{ testid }}-input-1">
+        </div>
+    </div>
+</div>

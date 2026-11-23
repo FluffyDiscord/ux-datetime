@@ -1,0 +1,101 @@
+{% props inputs, withTime = false, presets = null, submitOnApply = false, fieldId = null, required = false, disabled = false, invalid = false, min = null, max = null, testid = 'ux-datetime' %}
+
+{%- set controller = 'fluffydiscord--ux-datetime--picker' -%}
+{%- set isRange = inputs|length > 1 -%}
+{%- set defaultPresets = isRange
+    ? ['today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month', 'last_30_days', 'this_year', 'last_year']
+    : ['today', 'yesterday', 'tomorrow'] -%}
+{%- set popoverId = (fieldId ?? testid) ~ '-popover' -%}
+{%- set singlePlaceholder = withTime ? 'placeholder.datetime' : 'placeholder.date' -%}
+
+<div {{ attributes.defaults({
+    class: 'ux-datetime',
+    'data-controller': controller,
+    'data-action': [
+        'click@document->' ~ controller ~ '#closeOnOutsideClick',
+        'focusin@document->' ~ controller ~ '#closeOnOutsideClick',
+        'keydown.esc->' ~ controller ~ '#dismiss',
+        'submit@document->' ~ controller ~ '#blockInvalidSubmit',
+    ]|join(' '),
+    ('data-' ~ controller ~ '-values-value'): inputs|map(input => (input.value ?? ''))|json_encode,
+    ('data-' ~ controller ~ '-locale-value'): app.locale,
+    ('data-' ~ controller ~ '-min-value'): min ?? '',
+    ('data-' ~ controller ~ '-max-value'): max ?? '',
+    ('data-' ~ controller ~ '-with-time-value'): withTime ? 'true' : 'false',
+    ('data-' ~ controller ~ '-submit-on-apply-value'): submitOnApply ? 'true' : 'false',
+    'data-testid': testid,
+}) }}>
+    {%- for input in inputs %}
+        <input type="hidden" name="{{ input.name }}" value="{{ input.value }}"{% if disabled %} disabled{% endif %} data-{{ controller }}-target="input">
+    {%- endfor %}
+
+    <div data-live-ignore>
+        <div class="ux-datetime__field">
+            <svg class="ux-datetime__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/></svg>
+            {%- for input in inputs %}
+                {%- if not loop.first %}
+                    <span class="ux-datetime__separator" aria-hidden="true">–</span>
+                {%- endif %}
+                <input type="text" class="ux-datetime__input" autocomplete="off"
+                       {%- if loop.first and fieldId %} id="{{ fieldId }}"{% endif %}
+                       {%- if not loop.first %} aria-label="{{ 'to'|trans({}, 'ux_datetime') }}"{% endif %}
+                       {%- if required %} required{% endif %}
+                       {%- if disabled %} disabled{% endif %}
+                       aria-invalid="{{ invalid ? 'true' : 'false' }}"
+                       aria-haspopup="dialog"
+                       aria-expanded="false"
+                       aria-controls="{{ popoverId }}"
+                       placeholder="{{ (isRange ? (loop.first ? 'from' : 'to') : singlePlaceholder)|trans({}, 'ux_datetime') }}"
+                       data-invalid-message="{{ 'invalid.date'|trans({}, 'ux_datetime') }}"
+                       data-{{ controller }}-target="field"
+                       data-action="focus->{{ controller }}#open click->{{ controller }}#open change->{{ controller }}#commitTyped keydown.enter->{{ controller }}#applyTyped:prevent keydown.down->{{ controller }}#focusCalendar:prevent"
+                       data-testid="{{ testid }}-input-{{ loop.index }}">
+            {%- endfor %}
+        </div>
+
+        <div hidden class="ux-datetime__popover" id="{{ popoverId }}" role="dialog" aria-label="{{ 'dialog'|trans({}, 'ux_datetime') }}" data-{{ controller }}-target="popover" data-testid="{{ testid }}-popover">
+            <div class="ux-datetime__presets">
+                {%- for preset in presets ?? defaultPresets %}
+                    <button type="button" class="ux-datetime__preset" aria-pressed="false" data-preset="{{ preset }}"
+                            data-action="{{ controller }}#applyPreset"
+                            data-{{ controller }}-target="preset"
+                            data-testid="{{ testid }}-preset-{{ preset }}">{{ ('preset.' ~ preset)|trans({}, 'ux_datetime') }}</button>
+                {%- endfor %}
+            </div>
+
+            <div class="ux-datetime__calendar">
+                <div class="ux-datetime__nav">
+                    <button type="button" class="ux-datetime__nav-button" aria-label="{{ 'previous_month'|trans({}, 'ux_datetime') }}"
+                            data-action="{{ controller }}#showPreviousMonth"
+                            data-{{ controller }}-target="previousMonth"
+                            data-testid="{{ testid }}-month-previous"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6l6 6"/></svg></button>
+                    <button type="button" class="ux-datetime__nav-button" aria-label="{{ 'next_month'|trans({}, 'ux_datetime') }}"
+                            data-action="{{ controller }}#showNextMonth"
+                            data-{{ controller }}-target="nextMonth"
+                            data-testid="{{ testid }}-month-next"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6l-6 6"/></svg></button>
+                </div>
+
+                <div class="ux-datetime__months" data-{{ controller }}-target="months" data-action="keydown->{{ controller }}#navigateDays"></div>
+
+                <div class="ux-datetime__footer">
+                    <button type="button" class="ux-datetime__clear" data-action="{{ controller }}#clear" data-testid="{{ testid }}-clear">{{ 'clear'|trans({}, 'ux_datetime') }}</button>
+                </div>
+            </div>
+        </div>
+
+        <template data-{{ controller }}-target="monthTemplate">
+            <div class="ux-datetime__month" data-testid="{{ testid }}-month">
+                <div class="ux-datetime__month-name" aria-live="polite" data-month-name></div>
+                <div class="ux-datetime__grid" data-month-grid></div>
+            </div>
+        </template>
+
+        <template data-{{ controller }}-target="weekdayTemplate">
+            <span class="ux-datetime__weekday" aria-hidden="true"></span>
+        </template>
+
+        <template data-{{ controller }}-target="dayTemplate">
+            <button type="button" class="ux-datetime__day" tabindex="-1" data-action="{{ controller }}#pickDay"></button>
+        </template>
+    </div>
+</div>
