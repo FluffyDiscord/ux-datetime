@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace FluffyDiscord\UxDatetime\Tests;
 
+use FluffyDiscord\UxDatetime\Form\Type\DatePickerType;
+use FluffyDiscord\UxDatetime\Preset\Preset;
+use FluffyDiscord\UxDatetime\Tests\Fixtures\LimitsData;
 use FluffyDiscord\UxDatetime\Tests\Fixtures\TestKernel;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
+use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 class PickerFormTest extends WebTestCase
@@ -33,11 +38,21 @@ class PickerFormTest extends WebTestCase
 
         $dateTimePicker = $crawler->filter('[data-testid="demo_dateTime"]');
         self::assertSame('true', $dateTimePicker->attr(self::PICKER_VALUE_PREFIX . 'with-time-value'));
+        $today = new \DateTimeImmutable('today');
+        $fiscalYearStart = $today->modify('first day of april this year');
+        $fiscalYearStart = $fiscalYearStart > $today ? $fiscalYearStart->modify('-1 year') : $fiscalYearStart;
         self::assertSame(
-            ['today'],
+            [
+                ['today', $today->format('Y-m-d'), 'Dnes'],
+                ['fiscal_year', $fiscalYearStart->format('Y-m-d'), 'Fiscal year'],
+            ],
             $dateTimePicker
                 ->filter('[data-preset]')
-                ->each(static fn (Crawler $preset): ?string => $preset->attr('data-preset')),
+                ->each(static fn (Crawler $preset): array => [
+                    $preset->attr('data-preset'),
+                    $preset->attr('data-from'),
+                    $preset->text(),
+                ]),
         );
 
         $rangeInputs = $crawler->filter('[data-testid="demo_range"] input[type="hidden"]');
@@ -103,6 +118,40 @@ class PickerFormTest extends WebTestCase
         self::assertCount(1, $shopPage->filter('input[type="time"][name="demo[splitDateTime][time]"]'));
     }
 
+    public function testUnknownPresetNameListsTheRegisteredPresets(): void
+    {
+        self::bootKernel();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches(
+            '/"fiscal_yaer" does not exist\. Registered presets: "today", .*"fiscal_year"\./',
+        );
+
+        $this->getFormFactory()->create(DatePickerType::class, null, ['presets' => [Preset::Today, 'fiscal_yaer']]);
+    }
+
+    public function testValidatorConstraintsSetTheLimitsAndExplicitOptionsWin(): void
+    {
+        self::bootKernel();
+
+        $form = $this
+            ->getFormFactory()
+            ->createBuilder(FormType::class, new LimitsData())
+            ->add('deliveredOn', DatePickerType::class, ['input' => 'datetime_immutable'])
+            ->add('overridden', DatePickerType::class, ['input' => 'datetime_immutable', 'max' => '2030-01-01'])
+            ->getForm();
+        $view = $form->createView();
+
+        /** @var array{max: string|null} $derived */
+        $derived = $view['deliveredOn']->vars['ux_datetime'];
+
+        /** @var array{max: string|null} $explicit */
+        $explicit = $view['overridden']->vars['ux_datetime'];
+
+        self::assertSame((new \DateTimeImmutable('today'))->format('Y-m-d'), $derived['max']);
+        self::assertSame('2030-01-01', $explicit['max']);
+    }
+
     /**
      * @param array<array-key, mixed> $options
      */
@@ -112,6 +161,12 @@ class PickerFormTest extends WebTestCase
         $config = $options['ux_datetime'] ?? [];
 
         return new TestKernel($config, true === ($options['sylius'] ?? false));
+    }
+
+    private function getFormFactory(): FormFactoryInterface
+    {
+        /** @var FormFactoryInterface */
+        return self::getContainer()->get('form.factory');
     }
 
     /**

@@ -8,6 +8,7 @@ use FluffyDiscord\UxDatetime\Form\Type\DatePickerType;
 use FluffyDiscord\UxDatetime\Form\Type\DateRangePickerType;
 use FluffyDiscord\UxDatetime\Form\Type\DateTimePickerType;
 use FluffyDiscord\UxDatetime\Form\Type\TimePickerType;
+use FluffyDiscord\UxDatetime\Preset\Preset;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
@@ -26,7 +27,7 @@ class DemoType extends AbstractType
             ])
             ->add('dateTime', DateTimePickerType::class, [
                 'input' => 'datetime_immutable',
-                'presets' => ['today'],
+                'presets' => [Preset::Today, 'fiscal_year'],
             ])
             ->add('time', TimePickerType::class, [
                 'input' => 'string',

@@ -25,6 +25,8 @@ too-many-methods = { enabled = false }
 no-boolean-flag-parameter = { enabled = false }
 final-controller = { enabled = false }
 no-literal-password = { exclude = ["tests/"] }
+too-many-enum-cases = { threshold = 30 }
+cyclomatic-complexity = { threshold = 25 }
 
 [analyzer]
 minimum-fail-level = "note"

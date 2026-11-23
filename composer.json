@@ -34,7 +34,8 @@
         }
     },
     "suggest": {
-        "sylius/sylius": "Turns the picker on for every Sylius admin date field and grid date filter"
+        "sylius/sylius": "Turns the picker on for every Sylius admin date field and grid date filter",
+        "symfony/validator": "Derives min and max from LessThan, GreaterThan and Range constraints"
     },
     "require-dev": {
         "carthage-software/mago": "^1.0",
@@ -43,6 +44,7 @@
         "symfony/asset-mapper": "^6.4 || ^7.0 || ^8.0",
         "symfony/browser-kit": "^6.4 || ^7.0 || ^8.0",
         "symfony/css-selector": "^6.4 || ^7.0 || ^8.0",
-        "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0"
+        "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0",
+        "symfony/validator": "^6.4 || ^7.0 || ^8.0"
     }
 }

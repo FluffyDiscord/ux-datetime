@@ -1,10 +1,7 @@
-{% props inputs, withTime = false, presets = null, submitOnApply = false, fieldId = null, required = false, disabled = false, invalid = false, min = null, max = null, testid = 'ux-datetime' %}
+{% props inputs, withTime = false, presets = null, timezone = null, submitOnApply = false, fieldId = null, required = false, disabled = false, invalid = false, min = null, max = null, testid = 'ux-datetime' %}
 
 {%- set controller = 'fluffydiscord--ux-datetime--picker' -%}
 {%- set isRange = inputs|length > 1 -%}
-{%- set defaultPresets = isRange
-    ? ['today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month', 'last_30_days', 'this_year', 'last_year']
-    : ['today', 'yesterday', 'tomorrow'] -%}
 {%- set popoverId = (fieldId ?? testid) ~ '-popover' -%}
 {%- set singlePlaceholder = withTime ? 'placeholder.datetime' : 'placeholder.date' -%}
 
@@ -55,11 +52,12 @@
 
         <div hidden class="ux-datetime__popover" id="{{ popoverId }}" role="dialog" aria-label="{{ 'dialog'|trans({}, 'ux_datetime') }}" data-{{ controller }}-target="popover" data-testid="{{ testid }}-popover">
             <div class="ux-datetime__presets">
-                {%- for preset in presets ?? defaultPresets %}
-                    <button type="button" class="ux-datetime__preset" aria-pressed="false" data-preset="{{ preset }}"
+                {%- for preset in ux_datetime_presets(presets, isRange, timezone) %}
+                    <button type="button" class="ux-datetime__preset" aria-pressed="false"
+                            data-preset="{{ preset.name }}" data-from="{{ preset.from }}" data-to="{{ preset.to }}"
                             data-action="{{ controller }}#applyPreset"
                             data-{{ controller }}-target="preset"
-                            data-testid="{{ testid }}-preset-{{ preset }}">{{ ('preset.' ~ preset)|trans({}, 'ux_datetime') }}</button>
+                            data-testid="{{ testid }}-preset-{{ preset.name }}">{{ preset.label|trans }}</button>
                 {%- endfor %}
             </div>
 

@@ -45,6 +45,13 @@ export default class PickerController extends FieldController {
     #focusedDay: DateTime | null = null;
     #suppressNextOpen = false;
 
+    connect(): void {
+        const isFocusedBeforeConnect = this.element.contains(document.activeElement);
+        if (isFocusedBeforeConnect) {
+            this.open();
+        }
+    }
+
     open(): void {
         if (this.#suppressNextOpen) {
             this.#suppressNextOpen = false;
@@ -169,13 +176,7 @@ export default class PickerController extends FieldController {
     }
 
     applyPreset(event: Event): void {
-        const button = event.currentTarget as HTMLButtonElement;
-        const presetRange = this.#getPresetRange(button.dataset.preset ?? '');
-        if (presetRange === null) {
-            return;
-        }
-
-        const [start, end] = presetRange;
+        const [start, end] = this.#getPresetRange(event.currentTarget as HTMLButtonElement);
         const range = this.#isRange() ? [start, end] : [this.#withTimeOf(start, this.#draft[0])];
 
         this.#apply(range);
@@ -354,26 +355,8 @@ export default class PickerController extends FieldController {
         return day.set({ hour: source.hour, minute: source.minute });
     }
 
-    #getPresetRange(key: string): DayRange | null {
-        const today = this.#today();
-        const thisWeek = today.startOf('week', LOCALE_WEEKS);
-        const thisMonth = today.startOf('month');
-        const thisYear = today.startOf('year');
-
-        const ranges: Record<string, DayRange> = {
-            today: [today, today],
-            yesterday: [today.minus({ days: 1 }), today.minus({ days: 1 })],
-            tomorrow: [today.plus({ days: 1 }), today.plus({ days: 1 })],
-            this_week: [thisWeek, thisWeek.plus({ days: 6 })],
-            last_week: [thisWeek.minus({ weeks: 1 }), thisWeek.minus({ days: 1 })],
-            this_month: [thisMonth, thisMonth.endOf('month').startOf('day')],
-            last_month: [thisMonth.minus({ months: 1 }), thisMonth.minus({ days: 1 })],
-            last_30_days: [today.minus({ days: 29 }), today],
-            this_year: [thisYear, thisYear.endOf('year').startOf('day')],
-            last_year: [thisYear.minus({ years: 1 }), thisYear.minus({ days: 1 })],
-        };
-
-        return ranges[key] ?? null;
+    #getPresetRange(preset: HTMLElement): DayRange {
+        return [this.#fromIso(preset.dataset.from ?? ''), this.#fromIso(preset.dataset.to ?? '')];
     }
 
     #getKeyboardTarget(day: DateTime, key: string): DateTime | null {
@@ -471,15 +454,8 @@ export default class PickerController extends FieldController {
         const [start, end] = this.#getOrderedIsoDays();
 
         for (const preset of this.presetTargets) {
-            const presetRange = this.#getPresetRange(preset.dataset.preset ?? '');
-            if (presetRange === null) {
-                preset.hidden = true;
-
-                continue;
-            }
-
-            const [presetStart, presetEnd] = presetRange.map((date) => date.toISODate());
-            const isActive = start === presetStart && (end ?? start) === presetEnd;
+            const presetRange = this.#getPresetRange(preset);
+            const isActive = start === preset.dataset.from && (end ?? start) === preset.dataset.to;
             const isAllowed = presetRange.every((date) => this.#isDayAllowed(date));
 
             preset.setAttribute('aria-pressed', String(isActive));

@@ -4,11 +4,18 @@ declare(strict_types=1);
 
 namespace FluffyDiscord\UxDatetime;
 
+use FluffyDiscord\UxDatetime\Attribute\AsDatetimePreset;
+use FluffyDiscord\UxDatetime\Form\ConstraintBounds;
 use FluffyDiscord\UxDatetime\Form\Extension\PickerTypeExtension;
+use FluffyDiscord\UxDatetime\Form\FieldConstraints;
+use FluffyDiscord\UxDatetime\Form\LimitResolver;
+use FluffyDiscord\UxDatetime\Preset\PresetRegistry;
 use FluffyDiscord\UxDatetime\Sylius\LocalTimeDateFilter;
+use FluffyDiscord\UxDatetime\Twig\PresetExtension;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
+use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -17,6 +24,7 @@ use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
 
 class UxDatetimeBundle extends AbstractBundle implements CompilerPassInterface
 {
@@ -40,17 +48,33 @@ class UxDatetimeBundle extends AbstractBundle implements CompilerPassInterface
             ->info('Render every single_text DateType, DateTimeType and TimeType as the picker.')
             ->defaultFalse();
 
+        $root
+            ->scalarNode('timezone')
+            ->info('Timezone of "today" for presets, relative limits and Sylius grid filters. Null = the PHP default.')
+            ->defaultNull();
+
+        $presets = $root->arrayNode('presets')->addDefaultsIfNotSet()->children();
+
+        $presets
+            ->arrayNode('default_date')
+            ->info('Preset names for single-date fields without a presets option.')
+            ->scalarPrototype()
+            ->end()
+            ->defaultValue(PresetRegistry::DEFAULT_PRESETS['date']);
+
+        $presets
+            ->arrayNode('default_range')
+            ->info('Preset names for range fields without a presets option.')
+            ->scalarPrototype()
+            ->end()
+            ->defaultValue(PresetRegistry::DEFAULT_PRESETS['range']);
+
         $sylius = $root->arrayNode('sylius')->addDefaultsIfNotSet()->children();
 
         $sylius
             ->booleanNode('admin')
             ->info('Use the picker for every Sylius admin date field and grid date filter.')
             ->defaultTrue();
-
-        $sylius
-            ->scalarNode('timezone')
-            ->info('Timezone admins type grid filter dates in. Null = sylius_grid.timezone, then the PHP default.')
-            ->defaultNull();
     }
 
     public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void
@@ -77,15 +101,58 @@ class UxDatetimeBundle extends AbstractBundle implements CompilerPassInterface
         /** @var bool $replaceNativeWidgets */
         $replaceNativeWidgets = $config['replace_native_widgets'];
 
-        /** @var array{admin: bool, timezone: string|null} $syliusConfig */
+        /** @var string|null $timezone */
+        $timezone = $config['timezone'];
+
+        /** @var array{default_date: list<string>, default_range: list<string>} $presetConfig */
+        $presetConfig = $config['presets'];
+
+        /** @var array{admin: bool} $syliusConfig */
         $syliusConfig = $config['sylius'];
 
         $isSyliusAdmin = $syliusConfig['admin'] && $this->isSyliusAdminInstalled($container);
 
-        $configurator
-            ->services()
+        $container->registerAttributeForAutoconfiguration(
+            AsDatetimePreset::class,
+            static function (ChildDefinition $definition): void {
+                $definition->addTag(AsDatetimePreset::TAG);
+            },
+        );
+
+        $services = $configurator->services();
+
+        $services
+            ->set(PresetRegistry::class)
+            ->args([
+                tagged_iterator(AsDatetimePreset::TAG),
+                ['date' => $presetConfig['default_date'], 'range' => $presetConfig['default_range']],
+                $timezone,
+                service('request_stack')->nullOnInvalid(),
+                param('kernel.default_locale'),
+            ]);
+
+        $services
+            ->set(PresetExtension::class)
+            ->args([service(PresetRegistry::class)])
+            ->tag('twig.extension');
+
+        $services
+            ->set(FieldConstraints::class)
+            ->args([service('validator')->nullOnInvalid()]);
+
+        $services
+            ->set(ConstraintBounds::class)
+            ->args([$timezone]);
+
+        $services
+            ->set(LimitResolver::class)
+            ->args([service(FieldConstraints::class), service(ConstraintBounds::class), $timezone]);
+
+        $services
             ->set(PickerTypeExtension::class)
             ->args([
+                service(PresetRegistry::class),
+                service(LimitResolver::class),
                 $replaceNativeWidgets,
                 service('request_stack')->nullOnInvalid(),
                 $isSyliusAdmin ? '/%sylius_admin.path_name%' : null,
@@ -104,7 +171,7 @@ class UxDatetimeBundle extends AbstractBundle implements CompilerPassInterface
             ->decorate(self::SYLIUS_DATE_FILTER_SERVICE)
             ->args([
                 service('.inner'),
-                $syliusConfig['timezone'] ?? param(self::SYLIUS_GRID_TIMEZONE_PARAMETER),
+                $timezone ?? param(self::SYLIUS_GRID_TIMEZONE_PARAMETER),
             ]);
     }
 

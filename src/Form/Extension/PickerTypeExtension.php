@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace FluffyDiscord\UxDatetime\Form\Extension;
 
+use FluffyDiscord\UxDatetime\Form\LimitResolver;
+use FluffyDiscord\UxDatetime\Preset\PresetInterface;
+use FluffyDiscord\UxDatetime\Preset\PresetRegistry;
 use Symfony\Component\Form\AbstractTypeExtension;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
@@ -25,13 +28,9 @@ class PickerTypeExtension extends AbstractTypeExtension
         'time' => 'time',
     ];
 
-    private const LIMIT_FORMATS = [
-        'date' => 'Y-m-d',
-        'datetime' => 'Y-m-d\TH:i',
-        'time' => 'H:i',
-    ];
-
     public function __construct(
+        private readonly PresetRegistry $presetRegistry = new PresetRegistry(),
+        private readonly LimitResolver $limitResolver = new LimitResolver(),
         private readonly bool $replaceNativeWidgets = false,
         private readonly ?RequestStack $requestStack = null,
         private readonly ?string $syliusAdminPathPrefix = null,
@@ -50,9 +49,10 @@ class PickerTypeExtension extends AbstractTypeExtension
         ]);
 
         $resolver->setAllowedTypes('ux_datetime', ['null', 'bool']);
-        $resolver->setAllowedTypes('presets', ['null', 'string[]']);
+        $resolver->setAllowedTypes('presets', ['null', 'array']);
         $resolver->setAllowedTypes('min', ['null', 'string', \DateTimeInterface::class]);
         $resolver->setAllowedTypes('max', ['null', 'string', \DateTimeInterface::class]);
+        $resolver->setNormalizer('presets', $this->normalizePresets(...));
     }
 
     public function finishView(FormView $view, FormInterface $form, array $options): void
@@ -66,18 +66,15 @@ class PickerTypeExtension extends AbstractTypeExtension
         $type = $view->vars['type'];
         $mode = self::MODES[$type];
 
-        /** @var array<string, mixed> $attr */
-        $attr = $view->vars['attr'];
-
-        /** @var string|null $viewTimezone */
-        $viewTimezone = $options['view_timezone'];
+        $limits = $this->limitResolver->resolve($form, $options, $mode);
 
         $view->vars[self::VIEW_VARIABLE] = [
             'mode' => $mode,
             'inputs' => [['name' => $view->vars['full_name'], 'value' => $view->vars['value']]],
             'presets' => $options['presets'],
-            'min' => $this->formatLimit($options['min'] ?? $attr['min'] ?? null, $mode, $viewTimezone),
-            'max' => $this->formatLimit($options['max'] ?? $attr['max'] ?? null, $mode, $viewTimezone),
+            'timezone' => $options['view_timezone'],
+            'min' => $limits['min'],
+            'max' => $limits['max'],
         ];
     }
 
@@ -125,16 +122,20 @@ class PickerTypeExtension extends AbstractTypeExtension
         return str_starts_with($request->getPathInfo(), $this->syliusAdminPathPrefix);
     }
 
-    private function formatLimit(mixed $limit, string $mode, ?string $viewTimezone): ?string
+    /**
+     * @param array<array-key, mixed>|null $presets
+     *
+     * @return list<PresetInterface>|null
+     */
+    private function normalizePresets(Options $options, ?array $presets): ?array
     {
-        if (!$limit instanceof \DateTimeInterface) {
-            return is_string($limit) ? $limit : null;
+        if (null === $presets) {
+            return null;
         }
 
-        $timezone = new \DateTimeZone($viewTimezone ?? date_default_timezone_get());
+        /** @var list<PresetInterface|string> $presetList */
+        $presetList = array_values($presets);
 
-        return \DateTimeImmutable::createFromInterface($limit)
-            ->setTimezone($timezone)
-            ->format(self::LIMIT_FORMATS[$mode]);
+        return $this->presetRegistry->getAll($presetList);
     }
 }

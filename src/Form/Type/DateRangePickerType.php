@@ -20,6 +20,7 @@ class DateRangePickerType extends AbstractType
         $sharedOptions['required'] = $options['required'];
         $sharedOptions['min'] = $options['min'];
         $sharedOptions['max'] = $options['max'];
+        $sharedOptions['presets'] = $options['presets'];
 
         /** @var array<string, mixed> $fromOptions */
         $fromOptions = $options['from_options'];
@@ -46,19 +47,20 @@ class DateRangePickerType extends AbstractType
         /** @var string $toName */
         $toName = $options['to_name'];
 
-        /** @var array{inputs: list<array{name: string, value: mixed}>, min: string|null, max: string|null} $fromPicker */
+        /** @var array{inputs: list<array{name: string, value: mixed}>, presets: list<mixed>|null, timezone: string|null, min: string|null, max: string|null} $fromPicker */
         $fromPicker = $view->children[$fromName]->vars[PickerTypeExtension::VIEW_VARIABLE];
 
-        /** @var array{inputs: list<array{name: string, value: mixed}>} $toPicker */
+        /** @var array{inputs: list<array{name: string, value: mixed}>, min: string|null, max: string|null} $toPicker */
         $toPicker = $view->children[$toName]->vars[PickerTypeExtension::VIEW_VARIABLE];
 
         $view->vars['compound'] = false;
         $view->vars[PickerTypeExtension::VIEW_VARIABLE] = [
             'mode' => 'date',
             'inputs' => [...$fromPicker['inputs'], ...$toPicker['inputs']],
-            'presets' => $options['presets'],
-            'min' => $fromPicker['min'],
-            'max' => $fromPicker['max'],
+            'presets' => $fromPicker['presets'],
+            'timezone' => $fromPicker['timezone'],
+            'min' => $fromPicker['min'] ?? $toPicker['min'],
+            'max' => $toPicker['max'] ?? $fromPicker['max'],
         ];
     }
 
@@ -81,7 +83,7 @@ class DateRangePickerType extends AbstractType
         $resolver->setAllowedTypes('options', 'array');
         $resolver->setAllowedTypes('from_options', 'array');
         $resolver->setAllowedTypes('to_options', 'array');
-        $resolver->setAllowedTypes('presets', ['null', 'string[]']);
+        $resolver->setAllowedTypes('presets', ['null', 'array']);
         $resolver->setAllowedTypes('min', ['null', 'string', \DateTimeInterface::class]);
         $resolver->setAllowedTypes('max', ['null', 'string', \DateTimeInterface::class]);
     }

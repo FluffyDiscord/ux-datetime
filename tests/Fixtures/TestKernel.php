@@ -70,6 +70,7 @@ class TestKernel extends Kernel
             'default_locale' => 'cs',
             'translator' => ['fallbacks' => ['en']],
             'router' => ['utf8' => true],
+            'validation' => true,
         ]);
         $container->extension('twig', ['default_path' => __DIR__ . '/templates']);
         $container->extension('twig_component', [
@@ -78,10 +79,15 @@ class TestKernel extends Kernel
         ]);
         $container->extension('ux_datetime', $this->uxDatetimeConfig);
 
-        $container
-            ->services()
+        $services = $container->services();
+
+        $services
             ->set(DemoController::class)
             ->autowire()
+            ->autoconfigure();
+
+        $services
+            ->set(FiscalYearPreset::class)
             ->autoconfigure();
     }
 

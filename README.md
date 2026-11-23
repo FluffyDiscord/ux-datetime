@@ -7,11 +7,13 @@ Sylius users: see [Sylius](#sylius). After [Setup](#setup) the whole admin uses 
 ## Features
 
 - [Four form types](#form-types) — submit exactly what Symfony's `DateType`, `DateTimeType` and `TimeType` expect
+- [Presets](#presets) — 22 built-in ranges as a PHP enum, plus your own in one class
+- [Limits](#limits) — `min` / `max` come from the field's `LessThan`, `GreaterThan` and `Range` constraints
 - [Free-form typing](#typing) — `5.11.`, `dnes`, `tomorrow 14:30`, `930` all work
 - [Global switch](#global-switch) — every `single_text` date, date-time and time field becomes the picker
 - [Sylius admin](#sylius) — every admin date field and grid date filter, the shop untouched
 - [Live Components](#live-components) — survives re-renders without losing typed text
-- [Theming](#theming) — every colour, size and spacing is a CSS variable, plus [Tabler and daisyUI presets](#presets)
+- [Theming](#theming) — every colour, size and spacing is a CSS variable, plus [Tabler and daisyUI themes](#theme-presets)
 - [Keyboard and screen readers](#keyboard)
 
 ## Installation
@@ -99,6 +101,7 @@ use FluffyDiscord\UxDatetime\Form\Type\DatePickerType;
 use FluffyDiscord\UxDatetime\Form\Type\DateRangePickerType;
 use FluffyDiscord\UxDatetime\Form\Type\DateTimePickerType;
 use FluffyDiscord\UxDatetime\Form\Type\TimePickerType;
+use FluffyDiscord\UxDatetime\Preset\Preset;
 
 $builder
     ->add('deliveredOn', DatePickerType::class, [
@@ -106,7 +109,7 @@ $builder
     ])
     ->add('startsAt', DateTimePickerType::class, [
         'input' => 'datetime_immutable',
-        'presets' => ['today', 'tomorrow'],
+        'presets' => [Preset::Today, Preset::Tomorrow],
     ])
     ->add('opensAt', TimePickerType::class)
     ->add('period', DateRangePickerType::class, [
@@ -118,14 +121,12 @@ Each single type is the native type with `widget: single_text`, so every native 
 
 | Option | Default | Meaning |
 |---|---|---|
-| `min` | `null` | Earliest allowed value. `DateTimeInterface` or a string in the HTML5 format. Also read from `attr.min`. |
+| `min` | `null` | Earliest allowed value. `DateTimeInterface` or a string in the HTML5 format. Also read from `attr.min`. `null` = [from the constraints](#limits). |
 | `max` | `null` | Latest allowed value. Same formats as `min`. |
-| `presets` | `null` | Preset buttons to show. `null` = `today`, `yesterday`, `tomorrow` for one date; the full list for a range. |
+| `presets` | `null` | [Preset](#presets) buttons to show: `Preset` cases and preset names, mixed. `null` = `presets.default_date`, or `presets.default_range` for a range. |
 | `ux_datetime` | `null` | `true` / `false` forces the picker on or off for this field. `null` = follow [the global switch](#global-switch). |
 
 Days, presets and typed dates outside `min` / `max` are blocked in the browser.
-
-> Validate the limits on the server too: a `#[Assert\Range]` or `#[Assert\GreaterThanOrEqual]` on the entity or DTO.
 
 ### Date range
 
@@ -151,9 +152,130 @@ $builder->add('period', DateRangePickerType::class, [
 
 The browser swaps the dates when the end comes first.
 
-### Preset buttons
+## Presets
 
-`today`, `yesterday`, `tomorrow`, `this_week`, `last_week`, `this_month`, `last_month`, `last_30_days`, `this_year`, `last_year`. A preset outside `min` / `max` hides itself.
+Pass `Preset` cases, preset names, or both:
+
+```php
+use FluffyDiscord\UxDatetime\Preset\Preset;
+
+$builder->add('period', DateRangePickerType::class, [
+    'presets' => [Preset::ThisMonth, Preset::LastMonth, 'fiscal_year'],
+]);
+```
+
+A preset outside `min` / `max` hides itself. A name nobody registered throws an exception that lists the registered names. On a single-date field a range preset picks its first day.
+
+| Case | Name | Range |
+|---|---|---|
+| `Today` | `today` | today |
+| `Yesterday` | `yesterday` | yesterday |
+| `Tomorrow` | `tomorrow` | tomorrow |
+| `ThisWeek` | `this_week` | this week; the locale decides whether it starts on Monday or Sunday |
+| `LastWeek` | `last_week` | the week before |
+| `NextWeek` | `next_week` | the week after |
+| `ThisMonth` | `this_month` | 1st to last day of this month |
+| `LastMonth` | `last_month` | the month before |
+| `NextMonth` | `next_month` | the month after |
+| `Last7Days` | `last_7_days` | 6 days ago to today |
+| `Last14Days` | `last_14_days` | 13 days ago to today |
+| `Last30Days` | `last_30_days` | 29 days ago to today |
+| `Last90Days` | `last_90_days` | 89 days ago to today |
+| `Last365Days` | `last_365_days` | 364 days ago to today |
+| `Next7Days` | `next_7_days` | today to 6 days ahead |
+| `Next30Days` | `next_30_days` | today to 29 days ahead |
+| `ThisQuarter` | `this_quarter` | this calendar quarter |
+| `LastQuarter` | `last_quarter` | the quarter before |
+| `ThisYear` | `this_year` | 1 January to 31 December |
+| `LastYear` | `last_year` | the year before |
+| `MonthToDate` | `month_to_date` | 1st of this month to today |
+| `YearToDate` | `year_to_date` | 1 January to today |
+
+The server works out every range when it renders the page, in the [`timezone`](#configuration) setting. A page left open past midnight keeps yesterday's ranges until it reloads.
+
+### Your own preset
+
+Write one class. Autoconfiguration registers it under its name:
+
+`src/Preset/FiscalYearPreset.php`
+```php
+namespace App\Preset;
+
+use FluffyDiscord\UxDatetime\Attribute\AsDatetimePreset;
+use FluffyDiscord\UxDatetime\Preset\DateRange;
+use FluffyDiscord\UxDatetime\Preset\PresetContext;
+use FluffyDiscord\UxDatetime\Preset\PresetInterface;
+use Symfony\Component\Translation\TranslatableMessage;
+
+#[AsDatetimePreset]
+class FiscalYearPreset implements PresetInterface
+{
+    public function getName(): string
+    {
+        return 'fiscal_year';
+    }
+
+    public function getLabel(): TranslatableMessage
+    {
+        return new TranslatableMessage('Fiscal year');
+    }
+
+    public function resolve(PresetContext $context): DateRange
+    {
+        $today = $context->getToday();
+        $start = $today->modify('first day of april this year');
+        if ($start > $today) {
+            $start = $start->modify('-1 year');
+        }
+
+        return new DateRange($start, $start->modify('+1 year -1 day'));
+    }
+}
+```
+
+`PresetContext` has `getToday()`, `getStartOfWeek()`, `getStartOfMonth()`, `getStartOfQuarter()` and `getStartOfYear()`. A plain string label is shown as it is. A preset with the name of a built-in one replaces it.
+
+## Limits
+
+Leave `min` and `max` out and the picker reads them from the validation constraints on the mapped property:
+
+```php
+#[Assert\LessThan('tomorrow Europe/Prague')]
+private ?\DateTimeImmutable $receivedAt = null;
+```
+
+That field gets `max` = today in Prague: future days are disabled and the Tomorrow preset is hidden.
+
+- `LessThan`, `LessThanOrEqual`, `GreaterThan`, `GreaterThanOrEqual` and `Range` count, on the property or in the field's `constraints` option.
+- A `property_path` into a child object works: `details.receivedAt` reads the constraints of the `details` property's class.
+- Relative values (`today`, `tomorrow`) are worked out at render, in the timezone the value names, else in the [`timezone`](#configuration) setting.
+- Date fields turn an exclusive limit into the nearest whole day: `LessThan('tomorrow')` → `max` = today. Date-time fields use the exact moment.
+- Constraints with a `propertyPath`, and constraints outside the form's validation groups, are skipped.
+- `min` / `max` options and `attr.min` / `attr.max` win over the constraints.
+
+> The browser check is only a convenience. The constraint still validates on the server.
+
+## Configuration
+
+`config/packages/ux_datetime.yaml`
+```yaml
+ux_datetime:
+    replace_native_widgets: false
+    timezone: null
+    presets:
+        default_date: [today, yesterday, tomorrow]
+        default_range: [today, yesterday, this_week, last_week, this_month, last_month, last_30_days, this_quarter, last_quarter, this_year, last_year]
+    sylius:
+        admin: true
+```
+
+| Option | Default | Meaning |
+|---|---|---|
+| `replace_native_widgets` | `false` | See [Global switch](#global-switch). |
+| `timezone` | `null` | Timezone of "today" for presets, relative limits and Sylius grid filters. `null` = PHP's default; Sylius filters use `sylius_grid.timezone` first. |
+| `presets.default_date` | see above | Presets of single-date fields without a `presets` option. |
+| `presets.default_range` | see above | Presets of range fields and Sylius grid filters. |
+| `sylius.admin` | `true` | See [Sylius](#sylius). |
 
 ## Typing
 
@@ -182,7 +304,7 @@ Every `DateType`, `DateTimeType` and `TimeType` with `widget: single_text` (and 
 
 ## Sylius
 
-Nothing to configure beyond [Setup](#setup). Turn on the [Tabler preset](#presets) so the picker matches the admin. With `SyliusAdminBundle` installed:
+Nothing to configure beyond [Setup](#setup). Turn on the [Tabler theme](#theme-presets) so the picker matches the admin. With `SyliusAdminBundle` installed:
 
 - every admin date, date-time and time field uses the picker, including the time half Sylius splits out of `DateTimeType`;
 - every admin grid `date` filter becomes one range field that applies on pick and keeps `criteria[x][from|to][date]`;
@@ -191,15 +313,15 @@ Nothing to configure beyond [Setup](#setup). Turn on the [Tabler preset](#preset
 
 ```yaml
 ux_datetime:
+    timezone: Europe/Prague
     sylius:
         admin: true
-        timezone: null
 ```
 
 | Option | Default | Meaning |
 |---|---|---|
 | `sylius.admin` | `true` | Turns the whole Sylius integration on or off. |
-| `sylius.timezone` | `null` | Timezone admins pick filter days in. `null` = `sylius_grid.timezone`, then PHP's default. |
+| `timezone` | `null` | Timezone admins pick filter days in. `null` = `sylius_grid.timezone`, then PHP's default. |
 
 The date filter turns `from` into local midnight and `to` into the next local midnight, then converts both to PHP's default timezone, which is how Doctrine stores the dates. For a `DATE` column, skip the shift:
 
@@ -226,7 +348,7 @@ The form theme renders `<twig:UxDatetime:Picker>`. Use it directly for a field o
 />
 ```
 
-Props: `inputs` (one = single date, two = range), `withTime`, `presets`, `submitOnApply`, `fieldId`, `required`, `disabled`, `invalid`, `min`, `max`, `testid`. The time field is `<twig:UxDatetime:Time input="{{ {name: 'at', value: at} }}" stepMinutes="{{ 30 }}"/>`.
+Props: `inputs` (one = single date, two = range), `withTime`, `presets`, `timezone`, `submitOnApply`, `fieldId`, `required`, `disabled`, `invalid`, `min`, `max`, `testid`. The time field is `<twig:UxDatetime:Time input="{{ {name: 'at', value: at} }}" stepMinutes="{{ 30 }}"/>`.
 
 ## Theming
 
@@ -290,7 +412,7 @@ The markup uses only `ux-datetime__*` classes. Restyle a part through them when 
 | `--ux-datetime-preset-padding-y` | `0.375rem` | Presets, Clear |
 | `--ux-datetime-preset-padding-x` | `0.75rem` | Presets, Clear |
 
-### Presets
+### Theme presets
 
 Two optional stylesheets map the variables onto a framework's own:
 

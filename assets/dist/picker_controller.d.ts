@@ -16,6 +16,7 @@ export default class PickerController extends FieldController {
     readonly dayTemplateTarget: HTMLTemplateElement;
     readonly withTimeValue: boolean;
     readonly submitOnApplyValue: boolean;
+    connect(): void;
     open(): void;
     close(): void;
     dismiss(event: KeyboardEvent): void;
